@@ -1,10 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:safety_app/screens/emergency_contacts_screen.dart';
+import 'package:safety_app/screens/heart_rate_monitor_screen.dart';
 import '../widgets/hero_banner_widget.dart';
 import '../widgets/menu_options_widget.dart';
 import '../widgets/bottom_navbar_widget.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const HomeContentScreen(),
+       EmergencyContactsScreen(),
+       HeartRateMonitorScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,15 +38,31 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: const [
-            HeroBannerWidget(),
-            MenuOptionsWidget(),
-          ],
-        ),
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavBarWidget(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
       ),
-      bottomNavigationBar: const BottomNavBarWidget(),
+    );
+  }
+}
+
+class HomeContentScreen extends StatelessWidget {
+  const HomeContentScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: const [
+          HeroBannerWidget(),
+          MenuOptionsWidget(),
+        ],
+      ),
     );
   }
 }

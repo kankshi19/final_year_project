@@ -1,28 +1,43 @@
 import 'package:flutter/material.dart';
 
 class EmergencyContactsScreen extends StatelessWidget {
-  const EmergencyContactsScreen({Key? key}) : super(key: key);
+  final List<Map<String, String>> _emergencyContacts = [
+    {'name': 'Police', 'number': '100'},
+    {'name': 'Ambulance', 'number': '102'},
+    {'name': 'Fire Department', 'number': '101'},
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Emergency Contacts'),
+        title: Text('Emergency Contacts'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: const [
-          ListTile(
-            leading: Icon(Icons.call, color: Colors.orange),
-            title: Text('Police'),
-            subtitle: Text('0-1-5'),
-          ),
-          ListTile(
-            leading: Icon(Icons.local_hospital, color: Colors.redAccent),
-            title: Text('Ambulance'),
-            subtitle: Text('1-1-2-2'),
-          ),
-        ],
+      body: ListView.builder(
+        itemCount: _emergencyContacts.length,
+        itemBuilder: (context, index) {
+          final contact = _emergencyContacts[index];
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.red.shade100,
+              child: Icon(Icons.phone, color: Colors.red),
+            ),
+            title: Text(contact['name']!),
+            subtitle: Text(contact['number']!),
+            trailing: IconButton(
+              icon: Icon(Icons.call, color: Colors.green),
+              onPressed: () {
+                // Implement call functionality
+              },
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Implement add contact functionality
+        },
+        child: Icon(Icons.add),
       ),
     );
   }
