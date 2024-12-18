@@ -1,21 +1,21 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'routes/app_routes.dart';
-import 'theme/app_theme.dart';
+import 'package:safety_app/theme/app_theme.dart';
+import 'package:safety_app/routes/app_routes.dart';
 
 void main() {
-  runApp(const SafetyApp());
+  runApp(SafetyCompanionApp());
 }
 
-class SafetyApp extends StatelessWidget {
-  const SafetyApp({Key? key}) : super(key: key);
-
+class SafetyCompanionApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Safety Companion',
       debugShowCheckedModeBanner: false,
-      title: 'Safety App',
       theme: AppTheme.lightTheme,
-      initialRoute: '/',
+      darkTheme: AppTheme.darkTheme,
+      initialRoute: AppRoutes.home,
       routes: AppRoutes.routes,
     );
   }
