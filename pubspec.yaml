@@ -53,8 +53,6 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
-  assets:
-    - C:\Users\Kankshi Shah\OneDrive\Desktop\Bachao\safety_app\lib\assets\hero_image.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
