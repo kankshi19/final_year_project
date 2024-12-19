@@ -10,7 +10,7 @@ class MenuOptionsWidget extends StatelessWidget {
         ListTile(
           leading: const Icon(Icons.warning, color: Colors.orangeAccent),
           title: const Text('Emergency Contacts'),
-          onTap: () => Navigator.pushNamed(context, '/emergency'),
+          onTap: () => Navigator.pushNamed(context, '/emergency-contacts'),
         ),
         ListTile(
           leading: const Icon(Icons.book, color: Colors.blueAccent),
@@ -20,7 +20,7 @@ class MenuOptionsWidget extends StatelessWidget {
         ListTile(
           leading: const Icon(Icons.favorite, color: Colors.redAccent),
           title: const Text('Heart Rate Monitor'),
-          onTap: () => Navigator.pushNamed(context, '/heart-monitor'),
+          onTap: () => Navigator.pushNamed(context, '/heart-rate-monitor'),
         ),
       ],
     );

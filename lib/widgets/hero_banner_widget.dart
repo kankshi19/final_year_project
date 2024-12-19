@@ -13,7 +13,7 @@ class HeroBannerWidget extends StatelessWidget {
           color: Colors.blue.shade100,
           borderRadius: BorderRadius.circular(12),
           image: const DecorationImage(
-            image: AssetImage('assets/hero_image.png'),
+            image:NetworkImage('https://pics.craiyon.com/2024-09-08/d2XSxmz-T3CR8G8cUj4iMA.webp'),
             fit: BoxFit.cover,
           ),
         ),
