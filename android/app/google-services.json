@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1019219772775",
+    "project_id": "nirbhaya-2006",
+    "storage_bucket": "nirbhaya-2006.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1019219772775:android:517e15d8516c1eb6f49bc2",
+        "android_client_info": {
+          "package_name": "com.example.safety_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLzQuogfzrnlm9gQrLPE9lKmxZGfC28yw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:safety_app/screens/emergency_contacts_screen.dart';
 import 'package:safety_app/screens/heart_rate_monitor_screen.dart';
+import 'package:safety_app/screens/user_profile.dart';
+import '../routes/app_routes.dart';
 import '../widgets/hero_banner_widget.dart';
 import '../widgets/menu_options_widget.dart';
 import '../widgets/bottom_navbar_widget.dart';
@@ -23,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const HomeContentScreen(),
        EmergencyContactsScreen(),
        HeartRateMonitorScreen(),
+       UserProfile()
     ];
   }
 
@@ -34,7 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+                  Navigator.pushReplacementNamed(context, AppRoutes.settings); // Redirect to onboarding screen
+            },
           ),
         ],
       ),
