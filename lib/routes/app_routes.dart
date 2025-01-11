@@ -1,14 +1,37 @@
 import 'package:flutter/material.dart';
-import '../screens/home_screen.dart';
-import '../screens/emergency_contacts_screen.dart';
-import '../screens/safety_tips_screen.dart';
-import '../screens/heart_rate_monitor_screen.dart';
+import 'package:safety_app/screens/home_screen.dart';
+import 'package:safety_app/screens/emergency_contacts_screen.dart';
+import 'package:safety_app/screens/safety_tips_screen.dart';
+import 'package:safety_app/screens/heart_rate_monitor_screen.dart';
+import 'package:safety_app/screens/splash_screen.dart';
+import 'package:safety_app/screens/onboarding_screen.dart';
+import '../screens/notification_settings_screen.dart';
+import '../screens/privacy_settings_screen.dart';
+import '../screens/settings_screen.dart';
+import '../screens/user_profile.dart';
 
 class AppRoutes {
-  static Map<String, WidgetBuilder> routes = {
-    '/': (context) => HomeScreen(),
-    '/emergency': (context) => EmergencyContactsScreen(),
-    '/safety-tips': (context) => SafetyTipsScreen(),
-    '/heart-monitor': (context) => HeartRateMonitorScreen(),
-  };
+  static const String home = '/';
+  static const String onboarding = '/onboarding';
+  static const String userProfile = '/profile';
+  static const String emergencyContacts = '/emergency-contacts';
+  static const String safetyTips = '/safety-tips';
+  static const String heartRateMonitor = '/heart-rate-monitor';
+  static const String settings = '/settings';
+  static const String notificationSettings = '/notification-settings';
+  static const String privacySettings = '/privacy-settings';  
+
+  static Map<String, WidgetBuilder> get routes {
+    return {
+      home: (context) => SplashScreen(),
+      onboarding: (context) => OnboardingScreen(),
+      emergencyContacts: (context) => EmergencyContactsScreen(),
+      safetyTips: (context) => SafetyTipsScreen(),
+      heartRateMonitor: (context) => HeartRateMonitorScreen(),
+      userProfile: (context) => UserProfile(),
+      settings: (context) => SettingsScreen(),
+      notificationSettings: (context) => NotificationSettingsScreen(),
+      privacySettings: (context) => PrivacySettingsScreen(),
+    };
+  }
 }
