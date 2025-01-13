@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:safety_app/screens/emergency_contacts_screen.dart';
-import 'package:safety_app/screens/heart_rate_monitor_screen.dart';
+import 'package:safety_app/screens/route_map.dart';
 
 class BottomNavBarWidget extends StatefulWidget {
   final int currentIndex;
@@ -31,8 +31,8 @@ class _BottomNavBarWidgetState extends State<BottomNavBarWidget> {
           label: 'Emergency',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.favorite),
-          label: 'HeartRateMonitor',
+          icon: const Icon(Icons.map),
+          label: 'SafeRoute',
         ),
       ],
     );

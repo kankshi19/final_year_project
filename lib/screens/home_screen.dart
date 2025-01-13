@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:safety_app/screens/emergency_contacts_screen.dart';
-import 'package:safety_app/screens/heart_rate_monitor_screen.dart';
-import 'package:safety_app/screens/user_profile.dart';
+import 'package:safety_app/screens/route_map.dart';
 import '../routes/app_routes.dart';
-import '../widgets/hero_banner_widget.dart';
-import '../widgets/menu_options_widget.dart';
 import '../widgets/bottom_navbar_widget.dart';
+import 'map_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -22,10 +20,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _screens = [
-      const HomeContentScreen(),
+       MapScreen(),
        EmergencyContactsScreen(),
-       HeartRateMonitorScreen(),
-       UserProfile()
+       MapRouteScreen(),
     ];
   }
 
@@ -38,12 +35,12 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-                  Navigator.pushReplacementNamed(context, AppRoutes.settings); // Redirect to onboarding screen
+                  Navigator.pushNamed(context, AppRoutes.settings); // Redirect to settings screen
             },
           ),
         ],
       ),
-      body: _screens[_currentIndex],
+      body: _screens[_currentIndex], 
       bottomNavigationBar: BottomNavBarWidget(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -51,22 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _currentIndex = index;
           });
         },
-      ),
-    );
-  }
-}
-
-class HomeContentScreen extends StatelessWidget {
-  const HomeContentScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: const [
-          HeroBannerWidget(),
-          MenuOptionsWidget(),
-        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 // App Constants
 const String appName = 'Safety App';
+const String emergencyMessage = "SOS! I need help. My current location is ...";
 const double defaultPadding = 16.0;
 const double defaultMargin = 20.0;
 

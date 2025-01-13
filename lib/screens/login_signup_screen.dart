@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safety_app/screens/home_screen.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 
 class LoginSignupScreen extends StatefulWidget {
   @override
@@ -21,6 +21,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
       _currentScreen = screenIndex;
     });
   }
+  
 
   // Firebase Authentication Methods
   Future<User?> loginWithGoogle() async {
@@ -53,40 +54,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
     return null;
   }
 }
-
-  // Future<User?> _signInWithFacebook() async {
-  //   final LoginResult result = await FacebookAuth.i.login();
-
-  //   if (result.status == LoginStatus.success) {
-  //     final accessToken = result.accessToken;
-
-  //     if (accessToken != null) {
-  //       final OAuthCredential facebookCredential = FacebookAuthProvider.credential(accessToken.token);
-  //       UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(facebookCredential);
-  //       return userCredential.user;
-  //     } else {
-  //       print("Facebook AccessToken is null");
-  //       return null;
-  //     }
-  //   } else {
-  //     print("Facebook login failed: ${result.status}");
-  //     return null;
-  //   }
-  // }
-
-  // Future<User?> _signInWithApple() async {
-  //   final AuthorizationCredentialAppleID credential = await SignInWithApple.getAppleIDCredential(
-  //     scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
-  //   );
-
-  //   final AuthCredential appleCredential = OAuthProvider("apple.com").credential(
-  //     idToken: credential.identityToken,
-  //     accessToken: credential.authorizationCode,
-  //   );
-
-  //   UserCredential userCredential = await _auth.signInWithCredential(appleCredential);
-  //   return userCredential.user;
-  // }
 
   // Sign-Up Methods
   void _signUpWithGoogle() async {
@@ -168,40 +135,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
   }
 }
 
-
-
-  // void _signUpWithFacebook() async {
-  //   User? user = await _signInWithFacebook();
-  //   if (user != null) {
-  //     FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-  //       'name': user.displayName,
-  //       'email': user.email,
-  //       'photoUrl': user.photoURL,
-  //       'phoneNumber': user.phoneNumber,
-  //     });
-  //     Navigator.pushReplacement(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => HomeScreen()),
-  //     );
-  //   }
-  // }
-
-  // void _signUpWithApple() async {
-  //   User? user = await _signInWithApple();
-  //   if (user != null) {
-  //     FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-  //       'name': user.displayName,
-  //       'email': user.email,
-  //       'photoUrl': user.photoURL,
-  //       'phoneNumber': user.phoneNumber,
-  //     });
-  //     Navigator.pushReplacement(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => HomeScreen()),
-  //     );
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -224,9 +157,17 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
 
   Widget _buildLoginScreen() {
     
-    final _emailController = TextEditingController();
-    final _passwordController = TextEditingController();
-    bool _isPasswordVisible = false;  // Boolean to track password visibility
+    TextEditingController _emailController =
+      TextEditingController(); // Email controller
+  TextEditingController _passwordController =
+      TextEditingController(); // Password controller
+    bool _obscureText = true;  // Boolean to track password visibility
+
+    void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
     void _loginWithEmail() async {
   final String email = _emailController.text.trim();
@@ -280,100 +221,125 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
   }
 }
 
-
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Spacer(),
-          Image.asset('assets/logo.jpg', height: 150), 
-          SizedBox(height: 20),
-          Text("Login", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          SizedBox(height: 30),
-          TextField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              labelText: "Email",
-              prefixIcon: Icon(Icons.email),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          SizedBox(height: 20),
-          TextField(
-            controller: _passwordController,
-            decoration: InputDecoration(
-              labelText: "Password",
-              prefixIcon: Icon(Icons.lock_outline),
-              suffixIcon: StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;  // Toggle password visibility
-                      });
-                    },
-                    child: Icon(
-                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,  // Change the eye icon
-                      color: Colors.blue, // Set your preferred color for the icon
+    return Scaffold(
+      body : SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: 90),
+            Image.asset('assets/logo.jpg', height: 150), 
+            SizedBox(height: 20),
+            Text("Login", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            SizedBox(height: 30),
+             TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                     ),
-                  );
+                    hintText: 'Enter your email',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Colors.blueGrey,
+                        width: 1.5,
+                      ),
+                    ),
+                    prefixIcon: Icon(Icons.email, color: Color.fromARGB(255, 31, 166, 187)),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.clear, color: Color.fromARGB(255, 31, 166, 187)),
+                      onPressed: () {
+                        setState(() {
+                          _emailController.clear();
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Password TextField
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscureText,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Colors.blueGrey,
+                        width: 1.5,
+                      ),
+                    ),
+                    prefixIcon:
+                        const Icon(Icons.lock, color: Color.fromARGB(255, 31, 166, 187)),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureText ? Icons.visibility : Icons.visibility_off,
+                        color: const Color.fromARGB(255, 31, 166, 187),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureText = !_obscureText;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                    _loginWithEmail();
                 },
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),  // Add rounded corners
-              ),
-              hintText: "Password", // Add a hint for better user experience
-              
+              child: Text("Login"),
+              style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
             ),
-            obscureText: !_isPasswordVisible,
-          ),
-
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-                  _loginWithEmail();
-              },
-            child: Text("Login"),
-            style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
-          ),
-          SizedBox(height: 20,),
-          ElevatedButton.icon(
-            onPressed: _signInWithGoogle,
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-              backgroundColor: const Color.fromARGB(255, 236, 78, 57),
-              minimumSize: Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(color: Colors.grey.shade300),
+            SizedBox(height: 20,),
+            ElevatedButton.icon(
+              onPressed: _signInWithGoogle,
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                backgroundColor: const Color.fromARGB(255, 236, 78, 57),
+                minimumSize: Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+                elevation: 5,
               ),
-              elevation: 5,
-            ),
-            icon: FaIcon(FontAwesomeIcons.google, color: const Color.fromARGB(255, 255, 255, 255)), // Google icon
-            label: Text(
-              'Log In with Google',
-              style: TextStyle(
-                color: const Color.fromARGB(255, 255, 255, 255),
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+              icon: FaIcon(FontAwesomeIcons.google, color: const Color.fromARGB(255, 255, 255, 255)), // Google icon
+              label: Text(
+                'Log In with Google',
+                style: TextStyle(
+                  color: const Color.fromARGB(255, 255, 255, 255),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-          Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text("Don't have an account? "),
-              GestureDetector(
-                onTap: () => _navigateTo(1), // Navigate to Sign-Up
-                child: Text('Sign up here', style: TextStyle(color: Colors.pink)),
-              ),
-            ],
-          ),
-        ],
+            SizedBox(height: 100),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Don't have an account? "),
+                GestureDetector(
+                  onTap: () => _navigateTo(1), // Navigate to Sign-Up
+                  child: Text('Sign up here', style: TextStyle(color: Colors.pink)),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
+    )
     );
   }
 
@@ -383,6 +349,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
     final _phoneController = TextEditingController();
     final _emailController = TextEditingController();
     final _passwordController = TextEditingController();
+    bool _isPasswordVisible = false;
 
     void _signUp() async {
     final String name = _nameController.text.trim();
@@ -437,15 +404,25 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
   }
 
 
-    return Padding(
+    return Scaffold(
+      
+  body: SingleChildScrollView(
+    child: Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Spacer(),
-          Image.asset('assets/logo.jpg', height: 150), // Replace with your logo
+          SizedBox(height: 50), // Add some space at the top
+          Center(
+            child: Image.asset('assets/logo.jpg', height: 150),
+          ),
           SizedBox(height: 20),
-          Text("Sign Up", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Center(
+            child: Text(
+              "Sign Up",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
           SizedBox(height: 20),
           TextField(
             controller: _nameController,
@@ -480,9 +457,27 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
             controller: _passwordController,
             decoration: InputDecoration(
               labelText: "Password",
-              prefixIcon: Icon(Icons.lock),
-              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.lock_outline),
+              suffixIcon: StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;  // Toggle password visibility
+                      });
+                    },
+                    child: Icon(
+                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,  // Change the eye icon
+                      color: Colors.blue, // Set your preferred color for the icon
+                    ),
+                  );
+                },
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),  // Add rounded corners
+              ),              
             ),
+            obscureText: !_isPasswordVisible,
           ),
           SizedBox(height: 20),
           ElevatedButton(
@@ -490,10 +485,11 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
               _signUp();
             },
             child: Text("Sign Up"),
-            style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(double.infinity, 50),
+            ),
           ),
           SizedBox(height: 20),
-          // Google, Facebook, and Apple Sign Up Buttons
           ElevatedButton.icon(
             onPressed: _signUpWithGoogle,
             style: ElevatedButton.styleFrom(
@@ -506,7 +502,10 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
               ),
               elevation: 5,
             ),
-            icon: FaIcon(FontAwesomeIcons.google, color: const Color.fromARGB(255, 255, 255, 255)), // Google icon
+            icon: FaIcon(
+              FontAwesomeIcons.google,
+              color: const Color.fromARGB(255, 255, 255, 255),
+            ),
             label: Text(
               'Sign Up with Google',
               style: TextStyle(
@@ -516,213 +515,25 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
               ),
             ),
           ),
-          Spacer(),
+          SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text("Already have an account? "),
               GestureDetector(
                 onTap: () => _navigateTo(0), // Navigate to Login
-                child: Text('Log in here', style: TextStyle(color: Colors.pink)),
+                child: Text(
+                  'Log in here',
+                  style: TextStyle(color: Colors.pink),
+                ),
               ),
             ],
           ),
+          SizedBox(height: 20), // Add some space at the bottom
         ],
       ),
-    );
-  }
-
-  // // OTP Verification Screen
-  // Widget _buildOTPScreen() {
-  //   final _otpControllers = List<TextEditingController>.generate(
-  //     4,
-  //     (index) => TextEditingController(),
-  //   );
-
-  //   final _otpFocusNodes = List<FocusNode>.generate(4, (index) => FocusNode());
-
-  //   return Padding(
-  //     padding: const EdgeInsets.all(20.0),
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       crossAxisAlignment: CrossAxisAlignment.stretch,
-  //       children: [
-  //         Text("Verify OTP", textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-  //         SizedBox(height: 20),
-  //         Text("Enter the 4-digit OTP sent to your registered mobile number.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-  //         SizedBox(height: 20),
-  //         Row(
-  //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //           children: List.generate(
-  //             4,
-  //             (index) => SizedBox(
-  //               width: 50,
-  //               child: TextField(
-  //                 controller: _otpControllers[index],
-  //                 focusNode: _otpFocusNodes[index],
-  //                 keyboardType: TextInputType.number,
-  //                 maxLength: 1,
-  //                 textAlign: TextAlign.center,
-  //                 decoration: InputDecoration(counterText: '', border: OutlineInputBorder()),
-  //                 onChanged: (value) {
-  //                   if (value.isNotEmpty) {
-  //                     _otpControllers[index].text = value;
-  //                     _otpControllers[index].selection = TextSelection.collapsed(offset: value.length);
-
-  //                     if (index < _otpFocusNodes.length - 1) {
-  //                       FocusScope.of(context).requestFocus(_otpFocusNodes[index + 1]);
-  //                     } else {
-  //                       FocusScope.of(context).unfocus(); // Close keyboard
-  //                     }
-  //                   } else if (value.isEmpty && index > 0) {
-  //                     FocusScope.of(context).requestFocus(_otpFocusNodes[index - 1]);
-  //                   }
-  //                 },
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //         SizedBox(height: 20),
-  //         ElevatedButton(
-  //           onPressed: () {
-  //             String enteredOtp = _otpControllers.map((controller) => controller.text).join();
-  //             _verifyOTP(enteredOtp);
-  //           },
-  //           style: ElevatedButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 15)),
-  //           child: Text("Verify"),
-  //         ),
-  //         SizedBox(height: 10),
-  //         TextButton(
-  //           onPressed: () {
-  //             _resendOTP();
-  //           },
-  //           child: Text("Didn't receive the code? Resend"),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-//   // OTP Verification Logic
-//   void _sendOtp(String phoneNumber) async {
-//   _phoneNumber = phoneNumber; // Store the phone number for later use in re-sending OTP
-//   await _auth.verifyPhoneNumber(
-//     phoneNumber: "+91$phoneNumber",
-//     verificationCompleted: (PhoneAuthCredential credential) async {
-//       await _auth.signInWithCredential(credential);
-//       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen()));
-//     },
-//     verificationFailed: (FirebaseAuthException e) {
-//       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Verification failed: ${e.message}")));
-//     },
-//     codeSent: (String verificationId, int? resendToken) {
-//       setState(() {
-//         _verificationId = verificationId;
-//         _navigateTo(2); // Navigate to OTP screen
-//       });
-//     },
-//     codeAutoRetrievalTimeout: (String verificationId) {
-//       _verificationId = verificationId;
-//     },
-//   );
-// }
-
-//   void _verifyOTP(String otp) async {
-//   if (_verificationId != null && otp.length == 4) {
-//     try {
-//       // Create PhoneAuthCredential using the verification ID and OTP
-//       PhoneAuthCredential credential = PhoneAuthProvider.credential(
-//         verificationId: _verificationId!,
-//         smsCode: otp,
-//       );
-
-//       // Sign in with the credential
-//       await _auth.signInWithCredential(credential);
-
-//       // Navigate to the home screen on success
-//       Navigator.pushReplacement(
-//         context,
-//         MaterialPageRoute(builder: (context) => HomeScreen()),
-//       );
-//     } catch (e) {
-//       showDialog(
-//         context: context,
-//         builder: (context) => AlertDialog(
-//           title: Text("Error"),
-//           content: Text("Invalid OTP. Please try again."),
-//           actions: [
-//             TextButton(
-//               onPressed: () => Navigator.pop(context),
-//               child: Text("OK"),
-//             ),
-//           ],
-//         ),
-//       );
-//     }
-//   } else {
-//     showDialog(
-//       context: context,
-//       builder: (context) => AlertDialog(
-//         title: Text("Error"),
-//         content: Text("Enter a valid 4-digit OTP."),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.pop(context),
-//             child: Text("OK"),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-
-//   void _resendOTP() async {
-//   await _auth.verifyPhoneNumber(
-//     phoneNumber: _phoneNumber, // Make sure to store the entered phone number
-//     verificationCompleted: (PhoneAuthCredential credential) async {
-//       await _auth.signInWithCredential(credential);
-//       Navigator.pushReplacement(
-//         context,
-//         MaterialPageRoute(builder: (context) => HomeScreen()),
-//       );
-//     },
-//     verificationFailed: (FirebaseAuthException e) {
-//       showDialog(
-//         context: context,
-//         builder: (context) => AlertDialog(
-//           title: Text("Error"),
-//           content: Text("Failed to resend OTP. ${e.message}"),
-//           actions: [
-//             TextButton(
-//               onPressed: () => Navigator.pop(context),
-//               child: Text("OK"),
-//             ),
-//           ],
-//         ),
-//       );
-//     },
-//     codeSent: (String verificationId, int? resendToken) {
-//       setState(() {
-//         _verificationId = verificationId;
-//       });
-//       showDialog(
-//         context: context,
-//         builder: (context) => AlertDialog(
-//           title: Text("OTP Resent"),
-//           content: Text("A new OTP has been sent to your registered mobile number."),
-//           actions: [
-//             TextButton(
-//               onPressed: () => Navigator.pop(context),
-//               child: Text("OK"),
-//             ),
-//           ],
-//         ),
-//       );
-//     },
-//     codeAutoRetrievalTimeout: (String verificationId) {
-//       _verificationId = verificationId;
-//     },
-//   );
-// }
+    ),
+  ),
+);
+}
 }

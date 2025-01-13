@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:safety_app/routes/app_routes.dart'; // Assuming you use AppRoutes for navigation
+import 'package:safety_app/routes/app_routes.dart';
+
+import '../widgets/bottom_navbar_widget.dart'; // Assuming you use AppRoutes for navigation
 
 class SettingsScreen extends StatefulWidget {
   @override
@@ -46,27 +48,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       const SnackBar(content: Text("App data has been reset.")),
     );
   }
-  // Handle back button press to avoid app exit
-  Future<bool> _onWillPop() async {
-    // You can add custom behavior or prompt the user to confirm the exit if needed
-    return true; // Returning true means the back operation will proceed as normal
-  }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
-      child: Scaffold(
+      return Scaffold(
       appBar: AppBar(
         title: const Text("Settings"),
         backgroundColor: const Color.fromARGB(255, 58, 156, 183),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20.0),
@@ -147,7 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    ));
+    );
   }
 
   void _showResetDialog(BuildContext context) {
