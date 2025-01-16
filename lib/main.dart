@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:safety_app/theme/app_theme.dart';
 import 'package:safety_app/routes/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'theme/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,9 +12,15 @@ void main() async {
   
   // Get the saved theme preference
   final prefs = await SharedPreferences.getInstance();
-  final bool isDarkMode = prefs.getBool('isDarkMode') ?? false; // Default to light theme
+  final bool isDarkMode = prefs.getBool('isDarkMode') ?? false;
+   // Default to light theme
 
-  runApp(SafetyCompanionApp(isDarkMode: isDarkMode));
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: SafetyCompanionApp(isDarkMode: isDarkMode),
+    ),
+  );
 }
 
 class SafetyCompanionApp extends StatelessWidget {

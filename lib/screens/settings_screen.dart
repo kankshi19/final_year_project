@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:safety_app/routes/app_routes.dart';
-
+import 'package:provider/provider.dart';
+import '../theme/theme_provider.dart';
 import '../widgets/bottom_navbar_widget.dart'; // Assuming you use AppRoutes for navigation
 
 class SettingsScreen extends StatefulWidget {
@@ -34,11 +35,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Toggle theme
   void _toggleTheme(bool value) {
-    setState(() {
-      isDarkMode = value;
-    });
-    _saveTheme(value); // Save the new preference
-  }
+  setState(() {
+    isDarkMode = value;
+  });
+  _saveTheme(value); // Save the new preference
+  // Trigger theme change in the app
+  final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+  themeProvider.toggleTheme();
+}
 
   Future<void> _resetAppData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -86,17 +90,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Theme Settings
           
           ListTile(
-            leading: const Icon(Icons.color_lens, color: Colors.blue),
+            leading: const Icon(Icons.color_lens, color: Color.fromARGB(255, 58, 156, 183)),
             title: const Text("Theme"),
             subtitle: const Text("Switch between light and dark mode"),
             trailing: Switch(
               value: isDarkMode,
               onChanged: (value) {
                 _toggleTheme(value);
-                // You may want to trigger a theme reload here depending on your app's structure
-                // (e.g. using `setState` to rebuild the app with the new theme)
               },
             ),
+            onTap: () {
+              _toggleTheme(!isDarkMode); // Toggle the theme when the ListTile is tapped
+            },
           ),
           const Divider(),
 
@@ -122,6 +127,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _showResetDialog(context);
             },
           ),
+          const Divider(),
+
+          ListTile(
+            leading: const Icon(Icons.favorite,
+                color: Color.fromARGB(255, 58, 156, 183)),
+            title: const Text("Safety Guidlines"),
+            subtitle: const Text("Stay safe and secure"),
+            onTap: () {
+              Navigator.pushNamed(context, AppRoutes.safetyTips);
+            },
+          ),
+
           const Divider(),
 
           // Log Out

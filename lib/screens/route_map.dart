@@ -1,12 +1,7 @@
-
-import 'dart:async';
-import 'dart:convert';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/apis.dart';
-import '../utils/constants.dart';
 import '../services/location_services.dart';
 import '../widgets/distance_bottom_sheet.dart';
 import '../widgets/map_view.dart';

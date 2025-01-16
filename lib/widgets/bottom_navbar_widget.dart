@@ -27,8 +27,8 @@ class _BottomNavBarWidgetState extends State<BottomNavBarWidget> {
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.phone),
-          label: 'Emergency',
+          icon: const Icon(Icons.find_in_page),
+          label: 'Find Support',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.map),

@@ -45,33 +45,74 @@ class _MapScreenState extends State<MapScreen> {
   }
  
   // Function to fetch population data from Overpass API
-  Future<void> _fetchZoneData(double lat, double lon) async {
-    final url = Uri.parse(
-        'https://overpass-api.de/api/interpreter?data=[out:json];node(around:$_radius,$lat,$lon)["population"];out;');
- 
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        int population = _analyzePopulation(data);
-        String zone = _classifyZone(population);
- 
-        setState(() {
-          _zone = zone;
-        });
-      } else {
-        print("Error: ${response.statusCode}");
-        setState(() {
-          _zone = "Unable to fetch zone data.";
-        });
-      }
-    } catch (e) {
-      print("Error fetching population data: $e");
+Future<void> _fetchZoneData(double lat, double lon) async {
+  final url = Uri.parse(
+      'https://overpass-api.de/api/interpreter?data=[out:json];node(around:$_radius,$lat,$lon)["population"];out;');
+
+  try {
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      int population = _analyzePopulation(data);
+
+      // Fetch crime rate data
+      int crimeRate = await _fetchCrimeRate(lat, lon);
+
+      // Get current time of day
+      TimeOfDay currentTime = TimeOfDay.now();
+
+      // Determine the zone
+      String zone = _classifyZone(population, crimeRate, currentTime);
+
       setState(() {
-        _zone = "Error fetching zone data.";
+        _zone = zone;
+      });
+    } else {
+      print("Error: ${response.statusCode}");
+      setState(() {
+        _zone = "Unable to fetch zone data.";
       });
     }
+  } catch (e) {
+    print("Error fetching population data: $e");
+    setState(() {
+      _zone = "Error fetching zone data.";
+    });
   }
+}
+
+// Hypothetical function to fetch crime rate data
+Future<int> _fetchCrimeRate(double lat, double lon) async {
+  final crimeApiUrl = Uri.parse('https://example.com/crime_api?lat=$lat&lon=$lon');
+  try {
+    final response = await http.get(crimeApiUrl);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['crime_rate'] ?? 0; // Adjust based on API response structure
+    } else {
+      print("Error fetching crime data: ${response.statusCode}");
+      return 0;
+    }
+  } catch (e) {
+    print("Error fetching crime data: $e");
+    return 0;
+  }
+}
+
+// Update zone classification to include population, crime rate, and time
+String _classifyZone(int population, int crimeRate, TimeOfDay currentTime) {
+  // Determine time category
+  bool isNight = currentTime.hour >= 20 || currentTime.hour < 6;
+
+  if (crimeRate > 50 || (isNight && population < 10)) {
+    return "Red Zone (High Risk)";
+  } else if (crimeRate > 20 || population < 20) {
+    return "Yellow Zone (Moderate Risk)";
+  } else {
+    return "Green Zone (Low Risk)";
+  }
+}
+
  
   // Analyze population data to calculate total population
   int _analyzePopulation(Map<String, dynamic> data) {
@@ -84,18 +125,7 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
     return totalPopulation;
-  }
- 
-  // Classify zone based on population
-  String _classifyZone(int population) {
-    if (population > 20) {
-      return "Green Zone (High Population)";
-    } else if (population > 10) {
-      return "Yellow Zone (Moderate Population)";
-    } else {
-      return "Red Zone (Low Population)";
-    }
-  }
+  } 
  
   @override
 @override
@@ -103,7 +133,8 @@ Widget build(BuildContext context) {
   if (_currentLocation == null) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Location...'),
+        title: const Text('Live location tracking '),
+        backgroundColor: Color.fromARGB(255, 58, 156, 183),
       ),
       body: Center(child: CircularProgressIndicator()),
     );

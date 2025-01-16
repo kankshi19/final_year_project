@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:safety_app/screens/emergency_contacts_screen.dart';
+import 'package:safety_app/screens/emergency_screen.dart';
 import 'package:safety_app/screens/route_map.dart';
+import 'package:safety_app/screens/safety_tips_screen.dart';
 import '../routes/app_routes.dart';
 import '../widgets/bottom_navbar_widget.dart';
 import 'map_screen.dart';
@@ -21,16 +23,17 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _screens = [
        MapScreen(),
-       EmergencyContactsScreen(),
+       EmergencyScreen(),
        MapRouteScreen(),
-    ];
+     ];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('We\'ll help you\nIn any way we can'),
+        title: const Text('NirBhaya'),
+        backgroundColor: Color.fromARGB(255, 58, 156, 183),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),

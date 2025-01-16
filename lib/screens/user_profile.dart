@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
+import 'package:flutter_native_contact_picker/model/contact.dart';
+import 'package:safety_app/screens/emergency_screen.dart';
 import '../routes/app_routes.dart';
+import 'safety_preferences_screen.dart';
 
 class UserProfile extends StatefulWidget {
   @override
@@ -14,7 +17,8 @@ class _UserProfileState extends State<UserProfile> {
   String? displayName;
   String? email;
   String? profilePicUrl;
-  String? emergencyContact;
+  List<Map<String, String>> emergencyContacts = [];
+  // List<Contact?> emergencyContacts = [];
   bool isLoading = true;
 
   @override
@@ -29,17 +33,7 @@ class _UserProfileState extends State<UserProfile> {
         displayName = currentUser?.displayName ?? "User";
         email = currentUser?.email ?? "No email";
         profilePicUrl = currentUser?.photoURL ?? "";
-
-        // Fetch additional user data from Firestore
-        var userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser?.uid)
-            .get();
-
-        if (userDoc.exists) {
-          var userData = userDoc.data() as Map<String, dynamic>;
-          emergencyContact = userData['emergencyContact'] ?? "Not set";
-        }
+        await _loadEmergencyContacts();
       }
     } catch (e) {
       print("Error fetching user data: $e");
@@ -48,6 +42,115 @@ class _UserProfileState extends State<UserProfile> {
     setState(() {
       isLoading = false;
     });
+  }
+
+  Future<void> _loadEmergencyContacts() async {
+  try {
+    var contactsSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser?.uid)
+        .collection('emergency_contacts')
+        .get();
+
+    setState(() {
+      emergencyContacts = contactsSnapshot.docs.map((doc) {
+        return {
+          'name': doc['name']?.toString() ?? 'Unknown',
+          'phone': doc['phone']?.toString() ?? 'No phone number',
+        };
+      }).toList();
+    });
+  } catch (e) {
+    print("Error loading emergency contacts: $e");
+  }
+}
+
+
+  Future<void> _addEmergencyContact() async {
+    try {
+      final FlutterNativeContactPicker contactPicker = FlutterNativeContactPicker();
+      final Contact? contact = await contactPicker.selectContact();
+
+      if (contact != null && contact.phoneNumbers!.isNotEmpty) {
+        String phone = contact.phoneNumbers!.first.trim() ?? 'No phone';
+        String name = contact.fullName ?? 'Unknown';
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser?.uid)
+            .collection('emergency_contacts')
+            .add({
+          'name': name,
+          'phone': phone,
+        });
+
+        await _loadEmergencyContacts();
+      }
+    } catch (e) {
+      print("Error adding emergency contact: $e");
+    }
+  }
+
+  Future<void> _deleteEmergencyContact(Map<String, String> contact) async {
+    try {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser?.uid)
+          .collection('emergency_contacts')
+          .where('phone', isEqualTo: contact['phone'])
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        await querySnapshot.docs.first.reference.delete();
+      }
+
+      await _loadEmergencyContacts();
+    } catch (e) {
+      print("Error deleting emergency contact: $e");
+    }
+  }
+
+  void _showEmergencyContactsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Emergency Contacts"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...emergencyContacts.map((contact) => ListTile(
+                    title: Text(contact['name'] ?? ''),
+                    subtitle: Text(contact['phone'] ?? ''),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _deleteEmergencyContact(contact);
+                      },
+                    ),
+                  )),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _addEmergencyContact();
+                },
+                child: Text("Add Contact"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 58, 156, 183),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Close"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _signOut() async {
@@ -100,14 +203,25 @@ class _UserProfileState extends State<UserProfile> {
                     // Emergency Contact
                     ListTile(
                       leading: const Icon(Icons.phone, color: Color.fromARGB(255, 58, 156, 183)),
-                      title: const Text("Emergency Contact"),
-                      subtitle: Text(emergencyContact ?? "Not set"),
+                      title: const Text("Emergency Contacts"),
+                      subtitle: Text("${emergencyContacts.length} contacts"),
                       trailing: IconButton(
                         icon: const Icon(Icons.edit, color: Color.fromARGB(255, 58, 156, 183)),
-                        onPressed: () {
-                          // Add logic to edit emergency contact
-                        },
+                        onPressed: () => _showEmergencyContactsDialog(context),
                       ),
+                    ),
+                    const Divider(),
+                    // Emergency Screen Navigation
+                    ListTile(
+                      leading: const Icon(Icons.emergency, color: Color.fromARGB(255, 58, 156, 183)),
+                      title: const Text("Emergency & Nearby Support"),
+                      subtitle: const Text("Access emergency features"),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => EmergencyScreen()),
+                        );
+                      },
                     ),
                     const Divider(),
                     // Safety Preferences Section
@@ -116,7 +230,10 @@ class _UserProfileState extends State<UserProfile> {
                       title: const Text("Safety Preferences"),
                       subtitle: const Text("Customize your safety settings."),
                       onTap: () {
-                        // Navigate to Safety Preferences screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SafetyPreferencesScreen()),
+                        );
                       },
                     ),
                     const Divider(),
