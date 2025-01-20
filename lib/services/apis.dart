@@ -3,23 +3,20 @@ import 'dart:convert';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/enhanced_route.dart';
 
 class ApiService {
-  static const String apiKey = '5a49871c0cmsh9b15b2793087336p143bd4jsn63eda080b121';
-  static const String apiHost = 'google-map-places.p.rapidapi.com';
+  static const String apiKey = 'AIzaSyBNshGF10FPBnYO4oaYTnN2Lxuu580rxd8'; // Replace with your actual API key
+
+  // Fetch search results (autocomplete)
   static Future<List<dynamic>> fetchSearchResults(String query) async {
     const String apiUrl =
-        'https://google-map-places.p.rapidapi.com/maps/api/place/autocomplete/json';
-    final Uri uri = Uri.parse('$apiUrl?input=$query&radius=50000&language=en');
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json';
+    final Uri uri = Uri.parse(
+        '$apiUrl?input=$query&radius=50000&language=en&key=$apiKey');
 
     try {
-      final response = await http.get(
-        uri,
-        headers: {
-          'x-rapidapi-key': apiKey,
-          'x-rapidapi-host': apiHost,
-        },
-      );
+      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body)['predictions'];
@@ -31,28 +28,22 @@ class ApiService {
     }
   }
 
+  // Fetch place details
   static Future<List<dynamic>> fetchPlaceDetails(String placeId) async {
     const String detailsUrl =
-        'https://google-map-places.p.rapidapi.com/maps/api/place/details/json';
-    final Uri uri =
-    Uri.parse('$detailsUrl?place_id=$placeId&language=en');
+        'https://maps.googleapis.com/maps/api/place/details/json';
+    final Uri uri = Uri.parse('$detailsUrl?place_id=$placeId&language=en&key=$apiKey');
 
     try {
-      final response = await http.get(
-        uri,
-        headers: {
-          'x-rapidapi-key': apiKey,
-          'x-rapidapi-host': apiHost,
-        },
-      );
+      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
-        final placedetails = jsonDecode(response.body)['result'];
+        final placeDetails = jsonDecode(response.body)['result'];
         final selectedLocation = GeoPoint(
-          latitude: placedetails['geometry']['location']['lat'],
-          longitude: placedetails['geometry']['location']['lng'],
+          latitude: placeDetails['geometry']['location']['lat'],
+          longitude: placeDetails['geometry']['location']['lng'],
         );
-        return [selectedLocation,placedetails];
+        return [selectedLocation, placeDetails];
       } else {
         throw Exception('Failed to fetch place details: ${response.body}');
       }
@@ -61,24 +52,132 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> fetchDirections(
-      GeoPoint startLocation, GeoPoint destinationLocation) async {
-    const String directionsUrl =
-        'https://google-map-places.p.rapidapi.com/maps/api/directions/json';
 
-    final Uri uri = Uri.parse(
-        '$directionsUrl?origin=${startLocation.latitude},${startLocation.longitude}'
-            '&destination=${destinationLocation.latitude},${destinationLocation.longitude}'
-            '&mode=driving&language=en');
+static Future<List<Map<String, dynamic>>> fetchRoutes({
+    required double startLat,
+    required double startLng,
+    required double endLat,
+    required double endLng,
+  }) async {
+    const String rapidApiUrl = 'https://driving-directions1.p.rapidapi.com/get-directions';
+
+    // Format coordinates as addresses (you might want to use reverse geocoding here)
+    String origin = '$startLat, $startLng';  // Consider converting to address format
+    String destination = '$endLat, $endLng';  // Consider converting to address format
+
+    // Use queryParameters with Uri.https instead of manual string concatenation
+    final uri = Uri.https('driving-directions1.p.rapidapi.com', '/get-directions', {
+      'origin': origin,
+      'destination': destination,
+      'distance_units': 'auto',
+      'avoid_routes': 'tolls,ferries',
+      'country': 'in',
+      'language': 'en',
+    });
 
     try {
       final response = await http.get(
         uri,
         headers: {
-          'x-rapidapi-key': apiKey,
-          'x-rapidapi-host': apiHost,
+          'x-rapidapi-host': 'driving-directions1.p.rapidapi.com',
+          'x-rapidapi-key': 'a3fcd6647bmshc1a30e28106969bp19f41ajsn2d6a59ef2616',  // Replace with your API key stored securely
         },
       );
+
+      if (response.statusCode == 200) {
+        // Add debug print to see the raw response
+        print('API Response: ${response.body}');
+        
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        // More detailed error checking
+        if (data['status'] == null) {
+          throw Exception('Invalid API response format: missing status field');
+        }
+
+        if (data['status'] != 'OK') {
+          throw Exception('API request failed with status: ${data['status']} - ${data['message'] ?? 'No error message provided'}');
+        }
+
+        if (data['data']?['best_routes'] == null) {
+          throw Exception('No routes found in response');
+        }
+
+        final bestRoutes = data['data']['best_routes'] as List;
+
+        return bestRoutes.map((route) => {
+          'directions_link': route['directions_link'] ?? '',
+          'origin': route['origin'] ?? '',
+          'destination': route['destination'] ?? '',
+          'route_name': route['route_name'] ?? '',
+          'distance_label': route['distance_label'] ?? '',
+          'duration_label': route['duration_label'] ?? '',
+          // Add any additional fields you need
+        }).toList();
+      } else {
+        print('Error Response: ${response.body}');  // Debug print
+        throw Exception('Failed to fetch routes. Status code: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e) {
+      print('Exception caught: $e');  // Debug print
+      throw Exception('Error fetching routes: $e');
+    }
+  }
+  void testRoutes() async {
+  try {
+    final routes = await fetchRoutes(
+      startLat: 37.7749,
+      startLng: -122.4194,
+      endLat: 37.3382,
+      endLng: -121.8863,
+    );
+    print('Routes fetched successfully: $routes');
+  } catch (e) {
+    print('Error in test: $e');
+  }
+}
+static Future<List<EnhancedRoute>> fetchRoutesWithCrowdData({
+    required double startLat,
+    required double startLng,
+    required double endLat,
+    required double endLng,
+  }) async {
+    final routes = await fetchRoutes(
+      startLat: startLat,
+      startLng: startLng,
+      endLat: endLat,
+      endLng: endLng,
+    );
+
+    // Enhance routes with crowd data
+    List<EnhancedRoute> enhancedRoutes = [];
+    for (var route in routes) {
+      // Mock crowd data for now
+      Map<String, dynamic> enhancedRoute = {
+        ...route,
+        'crowd_density': 0.5, // Replace with actual crowd data
+        'historical_incident_rate': 0.3, // Replace with actual historical data
+      };
+      
+      enhancedRoutes.add(EnhancedRoute.fromApiResponse(enhancedRoute));
+    }
+    
+    return enhancedRoutes;
+  }
+
+  // Fetch directions polyline
+  static Future<List<dynamic>> fetchDirections(
+      GeoPoint startLocation, GeoPoint destinationLocation) async {
+    const String directionsUrl =
+        'https://maps.googleapis.com/maps/api/directions/json';
+
+    final Uri uri = Uri.parse(
+        '$directionsUrl?origin=${startLocation.latitude},${startLocation.longitude}'
+        '&destination=${destinationLocation.latitude},${destinationLocation.longitude}'
+        '&mode=driving&key=$apiKey');
+
+    try {
+      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body)['routes'][0]['overview_polyline']['points'];

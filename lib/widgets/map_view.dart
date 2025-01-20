@@ -29,7 +29,7 @@ class MapView extends StatelessWidget {
             icon: Icon(Icons.double_arrow, size: 150, color: Colors.transparent),
           ),
         ),
-        roadConfiguration: RoadOption(roadColor: Colors.yellowAccent),
+        roadConfiguration: RoadOption(roadColor: const Color.fromARGB(255, 224, 224, 147)),
       ),
     );
   }

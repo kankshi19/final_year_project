@@ -2,157 +2,146 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
-import 'package:latlong2/latlong.dart'; // Ensure this package is imported
+import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 
-import '../routes/app_routes.dart'; // Import the location package
- 
 class MapScreen extends StatefulWidget {
   @override
   _MapScreenState createState() => _MapScreenState();
 }
- 
+
 class _MapScreenState extends State<MapScreen> {
-  LocationData? _currentLocation; // Store the current location
-  late Location _location; // Instance of the Location class
-  String _zone = "Fetching zone..."; // Default zone text
-  final double _radius = 10; // Radius in meters for the Overpass API query
- 
+  LocationData? _currentLocation;
+  late Location _location;
+  String _zone = "Fetching zone...";
+  final double _radius = 1000; // Radius in meters for the Google Places API query
+  List<CircleMarker> _zoneMarkers = [];
+
+  // Replace with your Google API key
+  final String apiKey = "AIzaSyBNshGF10FPBnYO4oaYTnN2Lxuu580rxd8";
+
   @override
   void initState() {
     super.initState();
-    _location = Location(); // Initialize the location package
-    _getCurrentLocation(); // Fetch the current location
+    _location = Location();
+    _getCurrentLocation();
   }
- 
-  // Function to fetch the current location
+
   Future<void> _getCurrentLocation() async {
     try {
       var location = await _location.getLocation();
       setState(() {
         _currentLocation = location;
       });
- 
-      // Fetch population data and determine the zone
+
       if (_currentLocation != null) {
         double lat = _currentLocation!.latitude!;
         double lon = _currentLocation!.longitude!;
-        await _fetchZoneData(lat, lon);
+        await _fetchCrowdData(lat, lon);
       }
     } catch (e) {
       print("Error getting location: $e");
     }
   }
- 
-  // Function to fetch population data from Overpass API
-Future<void> _fetchZoneData(double lat, double lon) async {
-  final url = Uri.parse(
-      'https://overpass-api.de/api/interpreter?data=[out:json];node(around:$_radius,$lat,$lon)["population"];out;');
 
-  try {
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      int population = _analyzePopulation(data);
+  Future<void> _fetchCrowdData(double lat, double lon) async {
+    final String baseUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+    final Uri url = Uri.parse(
+      "$baseUrl?location=$lat,$lon&radius=$_radius&key=$apiKey",
+    );
 
-      // Fetch crime rate data
-      int crimeRate = await _fetchCrimeRate(lat, lon);
+    try {
+      final response = await http.get(url);
 
-      // Get current time of day
-      TimeOfDay currentTime = TimeOfDay.now();
+      if (response.statusCode == 200) {
+        // Parse the response JSON
+        final Map<String, dynamic> data = json.decode(response.body);
 
-      // Determine the zone
-      String zone = _classifyZone(population, crimeRate, currentTime);
+        // Analyze crowd data
+        int totalPlaces = _analyzePlaces(data);
 
+        // Determine the zone based on the number of nearby places
+        String zone = _classifyZone(totalPlaces);
+
+        setState(() {
+          _zone = zone;
+          _zoneMarkers = _createZoneMarkers(lat, lon, zone);
+        });
+      } else {
+        print("Failed to fetch crowd data. Status code: ${response.statusCode}");
+        setState(() {
+          _zone = "Unable to fetch zone data.";
+        });
+      }
+    } catch (e) {
+      print("An error occurred while fetching crowd data: $e");
       setState(() {
-        _zone = zone;
-      });
-    } else {
-      print("Error: ${response.statusCode}");
-      setState(() {
-        _zone = "Unable to fetch zone data.";
+        _zone = "Error fetching zone data.";
       });
     }
-  } catch (e) {
-    print("Error fetching population data: $e");
-    setState(() {
-      _zone = "Error fetching zone data.";
-    });
   }
-}
 
-// Hypothetical function to fetch crime rate data
-Future<int> _fetchCrimeRate(double lat, double lon) async {
-  final crimeApiUrl = Uri.parse('https://example.com/crime_api?lat=$lat&lon=$lon');
-  try {
-    final response = await http.get(crimeApiUrl);
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['crime_rate'] ?? 0; // Adjust based on API response structure
-    } else {
-      print("Error fetching crime data: ${response.statusCode}");
-      return 0;
+  int _analyzePlaces(Map<String, dynamic> data) {
+    // Analyze the number of places in the response
+    if (data.containsKey("results")) {
+      return data["results"].length;
     }
-  } catch (e) {
-    print("Error fetching crime data: $e");
     return 0;
   }
-}
 
-// Update zone classification to include population, crime rate, and time
-String _classifyZone(int population, int crimeRate, TimeOfDay currentTime) {
-  // Determine time category
-  bool isNight = currentTime.hour >= 20 || currentTime.hour < 6;
-
-  if (crimeRate > 50 || (isNight && population < 10)) {
-    return "Red Zone (High Risk)";
-  } else if (crimeRate > 20 || population < 20) {
-    return "Yellow Zone (Moderate Risk)";
-  } else {
-    return "Green Zone (Low Risk)";
-  }
-}
-
- 
-  // Analyze population data to calculate total population
-  int _analyzePopulation(Map<String, dynamic> data) {
-    int totalPopulation = 0;
-    if (data.containsKey("elements")) {
-      for (var element in data["elements"]) {
-        if (element["tags"] != null && element["tags"]["population"] != null) {
-          totalPopulation += int.tryParse(element["tags"]["population"]) ?? 0;
-        }
-      }
+  String _classifyZone(int totalPlaces) {
+    if (totalPlaces < 5) {
+      return "Red Zone (High Risk)";
+    } else if (totalPlaces < 20) {
+      return "Yellow Zone (Moderate Risk)";
+    } else {
+      return "Green Zone (Low Risk)";
     }
-    return totalPopulation;
-  } 
- 
-  @override
-@override
-Widget build(BuildContext context) {
-  if (_currentLocation == null) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Live location tracking '),
-        backgroundColor: Color.fromARGB(255, 58, 156, 183),
-      ),
-      body: Center(child: CircularProgressIndicator()),
-    );
   }
 
-  LatLng currentLatLng = LatLng(
-    _currentLocation!.latitude ?? 0.0,
-    _currentLocation!.longitude ?? 0.0,
-  );
+  List<CircleMarker> _createZoneMarkers(double lat, double lon, String zone) {
+    Color color;
+    if (zone.contains("Red")) {
+      color = Colors.red.withOpacity(0.3);
+    } else if (zone.contains("Yellow")) {
+      color = Colors.yellow.withOpacity(0.3);
+    } else {
+      color = Colors.green.withOpacity(0.3);
+    }
 
-  return Scaffold(
-    body: Stack(
-      
-      children: [
-        SizedBox(height: 20,),
-        // Wrap FlutterMap in an Expanded or SizedBox with a fixed height
-        Expanded(
-          child: FlutterMap(
+    return [
+      CircleMarker(
+        point: LatLng(lat, lon),
+        color: color,
+        borderColor: Colors.black,
+        borderStrokeWidth: 1.0,
+        useRadiusInMeter: true,
+        radius: _radius, // Radius in meters
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_currentLocation == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Live location tracking'),
+          backgroundColor: Color.fromARGB(255, 58, 156, 183),
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    LatLng currentLatLng = LatLng(
+      _currentLocation!.latitude ?? 0.0,
+      _currentLocation!.longitude ?? 0.0,
+    );
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          FlutterMap(
             options: MapOptions(
               initialCenter: currentLatLng,
               initialZoom: 12.0,
@@ -176,27 +165,29 @@ Widget build(BuildContext context) {
                   ),
                 ],
               ),
+              CircleLayer(
+                circles: _zoneMarkers,
+              ),
             ],
           ),
-        ),
-        Positioned(
-          top: 16.0,
-          left: 16.0,
-          child: Container(
-            padding: EdgeInsets.all(8.0),
-            color: Colors.white,
-            child: Text(
-              _zone,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+          Positioned(
+            top: 16.0,
+            left: 16.0,
+            child: Container(
+              padding: EdgeInsets.all(8.0),
+              color: Colors.white,
+              child: Text(
+                _zone,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 }

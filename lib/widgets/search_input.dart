@@ -8,6 +8,7 @@ class SearchInput extends StatefulWidget {
   final List<dynamic> searchResults;
   final Function(dynamic result, TextEditingController activeController) selectSearchResult;
   final void Function(BuildContext context) checkAndShowBottomSheet;
+
   SearchInput({
     required this.startController,
     required this.destinationController,
@@ -152,11 +153,13 @@ class _SearchInputState extends State<SearchInput> {
           prefixIcon: Icon(prefixIcon, color: prefixIconColor),
           suffixIcon: controller.text.isNotEmpty || focusNode.hasFocus
               ? IconButton(
-            icon: Icon(Icons.clear, color: Colors.grey),
-            onPressed: () {
-              controller.clear();
-            },
-          )
+                  icon: Icon(Icons.clear, color: Colors.grey),
+                  onPressed: () {
+                    controller.clear();
+                    // Dismiss the keyboard on clearing
+                    FocusScope.of(context).requestFocus(FocusNode());
+                  },
+                )
               : null,
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -166,7 +169,7 @@ class _SearchInputState extends State<SearchInput> {
   }
 
   Widget _buildSearchResults(BuildContext context) {
-      return Container(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.4 - MediaQuery.of(context).viewInsets.bottom,
@@ -212,5 +215,4 @@ class _SearchInputState extends State<SearchInput> {
       ),
     );
   }
-
 }

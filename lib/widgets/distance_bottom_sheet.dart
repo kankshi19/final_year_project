@@ -1,71 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+
+import '../screens/route_screen.dart';
 
 class DistanceBottomSheet extends StatelessWidget {
-  final Map<String, dynamic>? placeDetails; // Made nullable for loading state
+  final dynamic placeDetails; // Details fetched from the API
+  final GeoPoint? startLocation; // Starting point
+  final GeoPoint? destinationLocation; // Destination point
 
-  const DistanceBottomSheet({Key? key, this.placeDetails}) : super(key: key);
+  const DistanceBottomSheet({
+    Key? key,
+    required this.placeDetails,
+    required this.startLocation,
+    required this.destinationLocation,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.5, // Persistent height
-      decoration: const BoxDecoration(
-        color: Colors.green,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 7,
+            offset: const Offset(0, -3),
+          ),
+        ],
       ),
-      child: placeDetails == null ? _buildLoading() : _buildContent(),
-    );
-  }
-
-  Widget _buildLoading() {
-    return const Center(
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.white), // Optional color
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    return Padding(
+      height: 250,
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Text(
-            placeDetails!['name'] ?? 'Unknown Place',
-            style: const TextStyle(
-              fontSize: 20,
+          // Title
+          const Text(
+            'Route Details',
+            style: TextStyle(
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Rating: ${placeDetails!['rating'] ?? 'N/A'}',
-            style: const TextStyle(fontSize: 16),
+
+          // Display place details
+          if (placeDetails != null)
+            
+            Text(
+              'Destination: ${placeDetails['name'] ?? 'Unknown'}',
+              style: const TextStyle(fontSize: 16),
+            ),
+
+          // Divider
+          const Divider(
+            thickness: 1,
+            color: Colors.grey,
+            height: 24,
           ),
-          const SizedBox(height: 16),
-          Text(
-            placeDetails!['formatted_address'] ?? 'No address available',
-            style: const TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.directions),
-            label: const Text('Get Directions'),
-            onPressed: () {
-              // Add functionality for navigation
-            },
+
+          // Get Directions Button
+          if (startLocation != null && destinationLocation != null)
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.directions),
+              label: const Text('Get Directions'),
+              onPressed: () {
+                if (startLocation != null && destinationLocation != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RouteScreen(
+                        startLocation: startLocation!,
+                        destinationLocation: destinationLocation!,
+                      ),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select both start and destination locations.'),
+                    ),
+                  );
+                }
+              },
+            ),
+
+          // Message if locations are not selected
+          if (startLocation == null || destinationLocation == null)
+            const Text(
+              'Select both start and destination locations to get directions.',
+              style: TextStyle(fontSize: 14, color: Colors.red),
+            ),
+
+          const Spacer(),
+
+          // Close Bottom Sheet Button
+          Align(
+            alignment: Alignment.center,
+            child: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close, size: 28, color: Colors.grey),
+            ),
           ),
         ],
       ),

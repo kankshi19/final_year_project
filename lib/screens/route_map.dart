@@ -213,35 +213,32 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
     }
   }
   void _checkAndShowBottomSheet(BuildContext context) {
-    // Show the bottom sheet
-    showBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return FutureBuilder<dynamic>(
-          future: _setplaceDetails(), // Method to fetch place details
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              // Pass null to show loading state
-              return DistanceBottomSheet(placeDetails: null);
+  // Show the bottom sheet with fetched place details
+  showBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (_) {
+      return FutureBuilder<dynamic>(
+        future: _setplaceDetails(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return DistanceBottomSheet(placeDetails: null, startLocation: null, destinationLocation: null,);
+          } else {
+            final fetchedPlaceDetails = snapshot.data;
+            if (fetchedPlaceDetails is Map<String, dynamic>) {
+              return DistanceBottomSheet(placeDetails: fetchedPlaceDetails, startLocation: _startLocation, destinationLocation: _destinationLocation,);
             } else {
-              final fetchedPlaceDetails = snapshot.data;
-              if (fetchedPlaceDetails is Map<String, dynamic>) {
-                return DistanceBottomSheet(placeDetails: fetchedPlaceDetails);
-              } else {
-                return const SizedBox(
-                  height: 200,
-                  child: Center(child: Text('Invalid place details.')),
-                );
-              }
+              return const SizedBox(
+                height: 200,
+                child: Center(child: Text('Invalid place details.')),
+              );
             }
-          },
-        );
-      },
-    );
-  }
-
-
+          }
+        },
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
