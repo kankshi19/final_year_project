@@ -4,6 +4,8 @@ import 'package:safety_app/screens/settings/safety_tips_screen.dart';
 import 'package:safety_app/screens/initial/splash_screen.dart';
 import 'package:safety_app/screens/initial/onboarding_screen.dart';
 import '../screens/home/map_screen.dart';
+import '../screens/initial/login_screen.dart';
+import '../screens/initial/signup_screen.dart';
 import '../screens/settings/notification_settings_screen.dart';
 import '../screens/settings/privacy_settings_screen.dart';
 import '../screens/settings/settings_screen.dart';
@@ -22,9 +24,13 @@ class AppRoutes {
   static const String notificationSettings = '/notification-settings';
   static const String privacySettings = '/privacy-settings';  
   static const String emergency= '/find-support'; 
+  static const String signup= '/signup-screen'; 
+  static const String login= '/login-screen';
 
   static Map<String, WidgetBuilder> get routes {
     return {
+      signup: (context) => SignupScreen(),
+      login: (context) =>  LoginScreen(),
       home: (context) => SplashScreen(),
       onboarding: (context) => OnboardingScreen(),
       safetyTips: (context) => SafetyGuidelinesPage(),

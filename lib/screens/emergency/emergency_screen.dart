@@ -1,5 +1,6 @@
 // ignore_for_file: unused_local_variable
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
 import 'package:flutter_native_contact_picker/model/contact.dart';
@@ -18,7 +19,7 @@ class EmergencyScreen extends StatefulWidget {
 }
 
 class _EmergencyScreenState extends State<EmergencyScreen> {
-  final List<Contact?> emergencyContacts = [];
+  List<Contact?> emergencyContacts = [];
   List<Map<String, dynamic>> nearbyPlaces = [];
   LocationData? _currentLocation;
   final Location location = Location();
@@ -28,17 +29,45 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
-    _loadPredefinedContacts();
+    loadAllEmergencyContacts();
   }
 
-  // Load predefined emergency contacts
-  void _loadPredefinedContacts() {
-    emergencyContacts.addAll([
-      Contact(fullName: 'Police', phoneNumbers: ['100',]),
-      Contact(fullName: 'Women Helpline', phoneNumbers: ['181',]),
+  
+// Function to load emergency contacts when user logs in
+void loadAllEmergencyContacts() async {
+  try {
+    // Load predefined contacts first
+    final List<Contact> predefinedContacts = [
+      Contact(fullName: 'Police', phoneNumbers: ['100']),
+      Contact(fullName: 'Women Helpline', phoneNumbers: ['181']),
       Contact(fullName: 'Ambulance', phoneNumbers: ['102']),
-    ]);
+    ];
+
+    // Get current user ID
+    final String userId = FirebaseAuth.instance.currentUser!.uid;
+    
+    // Listen to personal contacts in real-time
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('emergency_contacts')
+        .snapshots()
+        .listen((snapshot) {
+      setState(() {
+        // Combine predefined contacts with personal contacts
+        emergencyContacts = [
+          ...predefinedContacts,
+          ...snapshot.docs.map((doc) => Contact(
+                fullName: doc['name'],
+                phoneNumbers: [doc['phone']],
+              )).toList(),
+        ];
+      });
+    });
+  } catch (e) {
+    print('Error loading emergency contacts: $e');
   }
+}
 
   // Get the user's live location
   void _getCurrentLocation() async {
@@ -74,19 +103,29 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
 
   // Add a new emergency contact
   void _addEmergencyContact() async {
-    final FlutterNativeContactPicker contactPicker = FlutterNativeContactPicker();
-    final Contact? contact = await contactPicker.selectContact();
-    if (contact != null) {
-      setState(() {
-        emergencyContacts.add(contact);
-        // Save to Firestore
-        FirebaseFirestore.instance.collection('emergency_contacts').add({
-          'name': contact.fullName,
-          'phone': contact.phoneNumbers?.first,
-        });
+  final FlutterNativeContactPicker contactPicker = FlutterNativeContactPicker();
+  final Contact? contact = await contactPicker.selectContact();
+  
+  // Get current user ID
+  final String userId = FirebaseAuth.instance.currentUser!.uid;
+  
+  if (contact != null) {
+    setState(() {
+      emergencyContacts.add(contact);
+      
+      // Save to Firestore under the user's document
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('emergency_contacts')
+          .add({
+        'name': contact.fullName,
+        'phone': contact.phoneNumbers?.first,
+        'timestamp': FieldValue.serverTimestamp(), 
       });
-    }
+    });
   }
+}
 
   // Make a call
 Future<void> _makeCall(String phoneNumber) async {
@@ -183,108 +222,162 @@ Future<void> _makeCall(String phoneNumber) async {
       //   backgroundColor: primaryColor,
       // ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Emergency Contacts Section
-            Card(
-              margin: EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Emergency Contacts',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.add, color: primaryColor),
-                          onPressed: _addEmergencyContact,
-                        ),
-                      ],
-                    ),
+      child: Column(
+        children: [
+          // Emergency Contacts Card
+          Card(
+            margin: EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Predefined Emergency Contacts Section
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Text(
+                    'Emergency Services',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: emergencyContacts.length,
-                    itemBuilder: (context, index) {
-                      final contact = emergencyContacts[index];
-                      return Dismissible(
-                        key: Key(contact?.fullName ?? ''),
-                        background: Container(color: Colors.red),
-                        onDismissed: (direction) => _deleteContact(index),
-                        child: ListTile(
-                          leading: CircleAvatar(child: Icon(Icons.person)),
-                          title: Text(contact?.fullName ?? 'Unknown'),
-                          subtitle:
-                              Text(contact != null && contact.phoneNumbers!.isNotEmpty ? contact.phoneNumbers?.first ?? '' : 'No number'),
-                          trailing: IconButton(
-                            icon: Icon(Icons.call, color: primaryColor),
-                            onPressed: () {
-                              if (contact != null && contact.phoneNumbers!.isNotEmpty) {
-                                final String phoneNumber = contact.phoneNumbers!.first;
-                                _makeCall(phoneNumber);
-                              }
-                            },
-                          ),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: emergencyContacts
+                      .where((contact) => 
+                          ['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
+                      .length,
+                  itemBuilder: (context, index) {
+                    final predefinedContacts = emergencyContacts
+                        .where((contact) => 
+                            ['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
+                        .toList();
+                    final contact = predefinedContacts[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: primaryColor.withOpacity(0.1),
+                        child: Icon(Icons.local_police, color: primaryColor),
+                      ),
+                      title: Text(contact?.fullName ?? 'Unknown'),
+                      subtitle: Text(contact != null && contact.phoneNumbers!.isNotEmpty 
+                          ? contact.phoneNumbers?.first ?? '' 
+                          : 'No number'),
+                      trailing: IconButton(
+                        icon: Icon(Icons.call, color: primaryColor),
+                        onPressed: () {
+                          if (contact != null && contact.phoneNumbers!.isNotEmpty) {
+                            final String phoneNumber = contact.phoneNumbers!.first;
+                            _makeCall(phoneNumber);
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+                
+                // Personal Emergency Contacts Section
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Personal Emergency Contacts',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.add, color: primaryColor),
+                        onPressed: _addEmergencyContact,
+                      ),
+                    ],
+                  ),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: emergencyContacts
+                      .where((contact) => 
+                          !['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
+                      .length,
+                  itemBuilder: (context, index) {
+                    final personalContacts = emergencyContacts
+                        .where((contact) => 
+                            !['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
+                        .toList();
+                    final contact = personalContacts[index];
+                    return Dismissible(
+                      key: Key(contact?.fullName ?? ''),
+                      background: Container(color: Colors.red),
+                      onDismissed: (direction) {
+                        final fullIndex = emergencyContacts.indexOf(contact);
+                        _deleteContact(fullIndex);
+                      },
+                      child: ListTile(
+                        leading: CircleAvatar(child: Icon(Icons.person)),
+                        title: Text(contact?.fullName ?? 'Unknown'),
+                        subtitle: Text(contact != null && contact.phoneNumbers!.isNotEmpty 
+                            ? contact.phoneNumbers?.first ?? '' 
+                            : 'No number'),
+                        trailing: IconButton(
+                          icon: Icon(Icons.call, color: primaryColor),
+                          onPressed: () {
+                            if (contact != null && contact.phoneNumbers!.isNotEmpty) {
+                              final String phoneNumber = contact.phoneNumbers!.first;
+                              _makeCall(phoneNumber);
+                            }
+                          },
                         ),
-                      );
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      onPressed: _sendSOS,
-                      style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-                      child: Text('Send SOS'),
-                    ),
-                  ),
-                ],
-              ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            // Nearby Places Section
-            Card(
-              margin: EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Text(
-                      'Nearby Support Centers',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: nearbyPlaces.length,
-                    itemBuilder: (context, index) {
-                      final place = nearbyPlaces[index];
-                      return ListTile(
-                        leading:
-                            CircleAvatar(child: Icon(Icons.place)),
-                        title:
-                            Text(place['name']),
-
-                        trailing:
-                            IconButton(icon:
-                                Icon(Icons.directions, color:
-                                    primaryColor), onPressed:
-                                () => _openGoogleMaps(place['lat'], place['lng'])),
-                      );
-                    },
-                  ),
-                ],
-              ),
+          ),
+          
+          // SOS Button
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+              onPressed: _sendSOS,
+              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+              child: Text('Send SOS'),
             ),
-          ],
-        ),
+          ),
+          
+          // Nearby Places Card
+          Card(
+            margin: EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Text(
+                    'Nearby Support Centers',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: nearbyPlaces.length,
+                  itemBuilder: (context, index) {
+                    final place = nearbyPlaces[index];
+                    return ListTile(
+                      leading: CircleAvatar(child: Icon(Icons.place)),
+                      title: Text(place['name']),
+                      trailing: IconButton(
+                        icon: Icon(Icons.directions, color: primaryColor),
+                        onPressed: () => _openGoogleMaps(place['lat'], place['lng']),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-    );
+    ),
+  );
   }
 }

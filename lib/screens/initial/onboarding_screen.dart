@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:safety_app/screens/initial/login_screen.dart';
 import 'dart:async';
-import 'login_signup_screen.dart'; // Import the LoginSignupScreen
 
 class OnboardingScreen extends StatefulWidget {
   @override
@@ -90,7 +90,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => LoginSignupScreen(),
+                      builder: (context) => LoginScreen(),
                     ),
                   );
                 },
@@ -111,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => LoginSignupScreen(),
+                        builder: (context) => LoginScreen(),
                       ),
                     );
                   } else {
