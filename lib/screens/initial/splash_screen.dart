@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               'NirBhaya',
               style: TextStyle(
-                color: const Color.fromARGB(255, 133, 14, 56),
+                
                 fontSize: 34,
                 fontWeight: FontWeight.bold,
               ),
@@ -44,7 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               'A Women Safety App',
               style: TextStyle(
-                color: const Color.fromARGB(179, 175, 31, 81),
+                
                 fontSize: 20,
               ),
             ),
@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
               "© 2025 NirBhaya",
               style: TextStyle(
                 fontSize: 11,
-                color: const Color.fromARGB(255, 95, 12, 40),
+                
               ),
             )
           ],

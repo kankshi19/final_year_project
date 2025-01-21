@@ -7,13 +7,14 @@ class AppTheme {
     visualDensity: VisualDensity.adaptivePlatformDensity,
     scaffoldBackgroundColor: Colors.white,
     appBarTheme: AppBarTheme(
-      backgroundColor: Colors.blue,
+      backgroundColor: Color.fromARGB(255, 62, 170, 165),
       foregroundColor: Colors.white,
       elevation: 0,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 62, 170, 165),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -23,7 +24,7 @@ class AppTheme {
 
   static final ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    primarySwatch: Colors.blue,
+    primarySwatch:Colors.blue,
     scaffoldBackgroundColor: Colors.black,
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.grey[900],

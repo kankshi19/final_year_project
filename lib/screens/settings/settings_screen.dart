@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safety_app/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:safety_app/routes/app_routes.dart';
 import 'package:provider/provider.dart';
@@ -58,7 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return Scaffold(
       appBar: AppBar(
         title: const Text("Settings"),
-        backgroundColor: const Color.fromARGB(255, 58, 156, 183),
+        backgroundColor: primaryColor,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20.0),
@@ -66,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Notification Settings
           ListTile(
             leading: const Icon(Icons.notifications,
-                color: Color.fromARGB(255, 58, 156, 183)),
+                color: primaryColor,),
             title: const Text("Notifications"),
             subtitle: const Text("Manage notification preferences"),
             onTap: () {
@@ -78,7 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Privacy Settings
           ListTile(
             leading: const Icon(Icons.privacy_tip,
-                color: Color.fromARGB(255, 58, 156, 183)),
+                color: primaryColor),
             title: const Text("Privacy"),
             subtitle: const Text("Manage your privacy settings"),
             onTap: () {
@@ -90,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Theme Settings
           
           ListTile(
-            leading: const Icon(Icons.color_lens, color: Color.fromARGB(255, 58, 156, 183)),
+            leading: const Icon(Icons.color_lens, color:primaryColor),
             title: const Text("Theme"),
             subtitle: const Text("Switch between light and dark mode"),
             trailing: Switch(
@@ -108,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Account Settings
           ListTile(
             leading: const Icon(Icons.account_circle,
-                color: Color.fromARGB(255, 58, 156, 183)),
+                color: primaryColor),
             title: const Text("Account"),
             subtitle: const Text("Manage your account settings"),
             onTap: () {
@@ -120,7 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Reset App Data
           ListTile(
             leading: const Icon(Icons.refresh,
-                color: Color.fromARGB(255, 58, 156, 183)),
+                color: primaryColor),
             title: const Text("Reset App"),
             subtitle: const Text("Clear all app data and settings"),
             onTap: () {
@@ -131,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           ListTile(
             leading: const Icon(Icons.favorite,
-                color: Color.fromARGB(255, 58, 156, 183)),
+                color: primaryColor),
             title: const Text("Safety Guidlines"),
             subtitle: const Text("Stay safe and secure"),
             onTap: () {
@@ -144,7 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Log Out
           ListTile(
             leading: const Icon(Icons.logout,
-                color: Color.fromARGB(255, 58, 156, 183)),
+                color: primaryColor),
             title: const Text("Log Out"),
             onTap: () {
               _showLogoutDialog(context);

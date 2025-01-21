@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:safety_app/utils/constants.dart';
 import '../../services/apis.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -231,7 +232,7 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   },
   style: ElevatedButton.styleFrom(
-    backgroundColor: const Color.fromARGB(255, 38, 139, 176),
+    backgroundColor: const Color.fromARGB(255, 62, 170, 165),
     minimumSize: const Size(double.infinity, 48),
   ),
   child: const Text(
@@ -251,7 +252,7 @@ class _RouteScreenState extends State<RouteScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Available Routes'),
-        backgroundColor: const Color.fromARGB(255, 16, 169, 212),
+        backgroundColor: primaryColor,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

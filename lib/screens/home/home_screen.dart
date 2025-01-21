@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('NirBhaya'),
-        backgroundColor: Color.fromARGB(255, 58, 156, 183),
+        backgroundColor: Color.fromARGB(255, 62, 170, 165),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),

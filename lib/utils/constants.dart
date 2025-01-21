@@ -7,6 +7,6 @@ const double defaultPadding = 16.0;
 const double defaultMargin = 20.0;
 
 // Color Constants
-const Color primaryColor = Color.fromARGB(255, 58, 156, 183); // Blue
+const Color primaryColor = Color.fromARGB(255, 62, 170, 165); // Blue
 const Color accentColor = Color(0xFFFFC107); // Amber
 const Color backgroundColor = Color(0xFFF5F5F5); // Light Grey

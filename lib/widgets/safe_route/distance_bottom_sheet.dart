@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:safety_app/utils/constants.dart';
 
 import '../../screens/safe-route/route_screen.dart';
 
@@ -44,7 +45,7 @@ class DistanceBottomSheet extends StatelessWidget {
             style: TextStyle(
               fontSize: 22, // Increased font size
               fontWeight: FontWeight.bold,
-              color: Colors.blueAccent, // Changed color for emphasis
+              color: primaryColor, // Changed color for emphasis
             ),
           ),
           const SizedBox(height: 12), // Increased space
@@ -67,13 +68,11 @@ class DistanceBottomSheet extends StatelessWidget {
           if (startLocation != null && destinationLocation != null)
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Added padding
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), // Rounded corners
                 elevation: 5, // Added elevation for depth
               ),
-              icon: const Icon(Icons.directions_outlined), // Changed icon for clarity
+              icon: const Icon(Icons.directions_outlined,color: Colors.white,), // Changed icon for clarity
               label: const Text('Get Directions', style: TextStyle(fontSize: 16)), // Increased font size
               onPressed: () {
                 if (startLocation != null && destinationLocation != null) {

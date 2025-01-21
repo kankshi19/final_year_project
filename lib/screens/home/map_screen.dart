@@ -125,10 +125,10 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     if (_currentLocation == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Live location tracking'),
-          backgroundColor: Color.fromARGB(255, 58, 156, 183),
-        ),
+        // appBar: AppBar(
+        //   title: const Text('Live location tracking'),
+        //   backgroundColor: Color.fromARGB(255, 62, 170, 165),
+        // ),
         body: Center(child: CircularProgressIndicator()),
       );
     }

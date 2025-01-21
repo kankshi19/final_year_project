@@ -178,10 +178,10 @@ Future<void> _makeCall(String phoneNumber) async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Emergency & Nearby Support'),
-        backgroundColor: primaryColor,
-      ),
+      // appBar: AppBar(
+      //   title: Text('Emergency & Nearby Support'),
+      //   backgroundColor: primaryColor,
+      // ),
       body: SingleChildScrollView(
         child: Column(
           children: [
