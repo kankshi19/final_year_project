@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safety_app/screens/emergency_contacts_screen.dart';
-import 'package:safety_app/screens/route_map.dart';
+import 'package:safety_app/screens/safe-route/route_map.dart';
 
 class BottomNavBarWidget extends StatefulWidget {
   final int currentIndex;

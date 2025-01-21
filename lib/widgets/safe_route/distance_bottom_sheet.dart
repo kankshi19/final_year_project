@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
-import '../screens/route_screen.dart';
+import '../../screens/safe-route/route_screen.dart';
 
 class DistanceBottomSheet extends StatelessWidget {
   final dynamic placeDetails; // Details fetched from the API
@@ -21,20 +21,20 @@ class DistanceBottomSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
+            color: Colors.black.withOpacity(0.1),
             spreadRadius: 2,
-            blurRadius: 7,
+            blurRadius: 10,
             offset: const Offset(0, -3),
           ),
         ],
       ),
-      height: 250,
-      padding: const EdgeInsets.all(16.0),
+      height: 300, // Increased height for better spacing
+      padding: const EdgeInsets.all(20.0), // Increased padding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -42,36 +42,39 @@ class DistanceBottomSheet extends StatelessWidget {
           const Text(
             'Route Details',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 22, // Increased font size
               fontWeight: FontWeight.bold,
+              color: Colors.blueAccent, // Changed color for emphasis
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12), // Increased space
 
           // Display place details
           if (placeDetails != null)
-            
             Text(
               'Destination: ${placeDetails['name'] ?? 'Unknown'}',
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 18), // Increased font size
             ),
 
           // Divider
           const Divider(
-            thickness: 1,
+            thickness: 1.5,
             color: Colors.grey,
-            height: 24,
+            height: 30, // Increased height for better spacing
           ),
 
           // Get Directions Button
           if (startLocation != null && destinationLocation != null)
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Colors.blueAccent,
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Added padding
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), // Rounded corners
+                elevation: 5, // Added elevation for depth
               ),
-              icon: const Icon(Icons.directions),
-              label: const Text('Get Directions'),
+              icon: const Icon(Icons.directions_outlined), // Changed icon for clarity
+              label: const Text('Get Directions', style: TextStyle(fontSize: 16)), // Increased font size
               onPressed: () {
                 if (startLocation != null && destinationLocation != null) {
                   Navigator.push(
@@ -86,7 +89,8 @@ class DistanceBottomSheet extends StatelessWidget {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please select both start and destination locations.'),
+                      content:
+                          Text('Please select both start and destination locations.'),
                     ),
                   );
                 }
@@ -95,9 +99,13 @@ class DistanceBottomSheet extends StatelessWidget {
 
           // Message if locations are not selected
           if (startLocation == null || destinationLocation == null)
-            const Text(
-              'Select both start and destination locations to get directions.',
-              style: TextStyle(fontSize: 14, color: Colors.red),
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'Select both start and destination locations to get directions.',
+                style:
+                    TextStyle(fontSize: 14, color: Colors.redAccent), // Changed color for visibility
+              ),
             ),
 
           const Spacer(),
@@ -107,7 +115,8 @@ class DistanceBottomSheet extends StatelessWidget {
             alignment: Alignment.center,
             child: IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close, size: 28, color: Colors.grey),
+              icon:
+                  const Icon(Icons.close, size: 30, color: Colors.grey), // Increased icon size
             ),
           ),
         ],

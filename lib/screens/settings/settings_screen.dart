@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:safety_app/routes/app_routes.dart';
 import 'package:provider/provider.dart';
-import '../theme/theme_provider.dart';
-import '../widgets/bottom_navbar_widget.dart'; // Assuming you use AppRoutes for navigation
+import '../../theme/theme_provider.dart';
+import '../../widgets/bottom_navbar_widget.dart'; // Assuming you use AppRoutes for navigation
 
 class SettingsScreen extends StatefulWidget {
   @override

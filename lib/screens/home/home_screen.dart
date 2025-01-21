@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:safety_app/screens/emergency_contacts_screen.dart';
-import 'package:safety_app/screens/emergency_screen.dart';
-import 'package:safety_app/screens/route_map.dart';
-import 'package:safety_app/screens/safety_tips_screen.dart';
-import '../routes/app_routes.dart';
-import '../widgets/bottom_navbar_widget.dart';
+import 'package:safety_app/screens/emergency/emergency_screen.dart';
+import 'package:safety_app/screens/safe-route/route_map.dart';
+import '../../routes/app_routes.dart';
+import '../../widgets/bottom_navbar_widget.dart';
 import 'map_screen.dart';
 
 class HomeScreen extends StatefulWidget {

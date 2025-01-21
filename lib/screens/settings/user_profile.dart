@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
 import 'package:flutter_native_contact_picker/model/contact.dart';
-import 'package:safety_app/screens/emergency_screen.dart';
-import '../routes/app_routes.dart';
+import 'package:safety_app/screens/emergency/emergency_screen.dart';
+import '../../routes/app_routes.dart';
 import 'safety_preferences_screen.dart';
 
 class UserProfile extends StatefulWidget {

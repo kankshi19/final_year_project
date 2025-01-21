@@ -80,7 +80,7 @@ static Future<List<Map<String, dynamic>>> fetchRoutes({
         uri,
         headers: {
           'x-rapidapi-host': 'driving-directions1.p.rapidapi.com',
-          'x-rapidapi-key': 'a3fcd6647bmshc1a30e28106969bp19f41ajsn2d6a59ef2616',  // Replace with your API key stored securely
+          'x-rapidapi-key': 'a3fcd6647bmshc1a30e28106969bp19f41ajsn2d6a59ef2616',  
         },
       );
 
@@ -104,9 +104,10 @@ static Future<List<Map<String, dynamic>>> fetchRoutes({
         }
 
         final bestRoutes = data['data']['best_routes'] as List;
+        final direction_link = data['data']['directions_link'] ?? 'https://www.google.com/maps';
 
         return bestRoutes.map((route) => {
-          'directions_link': route['directions_link'] ?? '',
+          'direction_link': direction_link,
           'origin': route['origin'] ?? '',
           'destination': route['destination'] ?? '',
           'route_name': route['route_name'] ?? '',

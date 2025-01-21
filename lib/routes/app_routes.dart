@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:safety_app/screens/home_screen.dart';
-import 'package:safety_app/screens/emergency_contacts_screen.dart';
-import 'package:safety_app/screens/route_map.dart';
-import 'package:safety_app/screens/safety_tips_screen.dart';
-import 'package:safety_app/screens/splash_screen.dart';
-import 'package:safety_app/screens/onboarding_screen.dart';
-import '../screens/map_screen.dart';
-import '../screens/notification_settings_screen.dart';
-import '../screens/privacy_settings_screen.dart';
-import '../screens/settings_screen.dart';
-import '../screens/user_profile.dart';
-import '../screens/emergency_screen.dart';
+import 'package:safety_app/screens/safe-route/route_map.dart';
+import 'package:safety_app/screens/settings/safety_tips_screen.dart';
+import 'package:safety_app/screens/initial/splash_screen.dart';
+import 'package:safety_app/screens/initial/onboarding_screen.dart';
+import '../screens/home/map_screen.dart';
+import '../screens/settings/notification_settings_screen.dart';
+import '../screens/settings/privacy_settings_screen.dart';
+import '../screens/settings/settings_screen.dart';
+import '../screens/settings/user_profile.dart';
+import '../screens/emergency/emergency_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -29,7 +27,6 @@ class AppRoutes {
     return {
       home: (context) => SplashScreen(),
       onboarding: (context) => OnboardingScreen(),
-      emergencyContacts: (context) => EmergencyContactsScreen(),
       safetyTips: (context) => SafetyGuidelinesPage(),
       routeMap: (context) => MapRouteScreen(),
       userProfile: (context) => UserProfile(),

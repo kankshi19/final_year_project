@@ -35,7 +35,7 @@ class SafetyCompanionApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light, // Set theme mode based on user preference
+      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light, 
       initialRoute: AppRoutes.home,
       routes: AppRoutes.routes,
     );

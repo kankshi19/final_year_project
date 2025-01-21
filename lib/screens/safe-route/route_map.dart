@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:geolocator/geolocator.dart';
-import '../services/apis.dart';
-import '../services/location_services.dart';
-import '../widgets/distance_bottom_sheet.dart';
-import '../widgets/map_view.dart';
-import '../widgets/location_button.dart';
-import '../widgets/zoom_button.dart';
-import '../widgets/search_input.dart';
+import '../../services/apis.dart';
+import '../../services/location_services.dart';
+import '../../widgets/safe_route/distance_bottom_sheet.dart';
+import '../../widgets/safe_route/map_view.dart';
+import '../../widgets/safe_route/location_button.dart';
+import '../../widgets/safe_route/zoom_button.dart';
+import '../../widgets/safe_route/search_input.dart';
 class MapRouteScreen extends StatefulWidget {
   const MapRouteScreen({Key? key}) : super(key: key);
 

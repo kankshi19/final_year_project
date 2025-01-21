@@ -92,7 +92,7 @@ class _MapScreenState extends State<MapScreen> {
   String _classifyZone(int totalPlaces) {
     if (totalPlaces < 5) {
       return "Red Zone (High Risk)";
-    } else if (totalPlaces < 20) {
+    } else if (totalPlaces < 10) {
       return "Yellow Zone (Moderate Risk)";
     } else {
       return "Green Zone (Low Risk)";

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
-import '../services/apis.dart';
+import '../../services/apis.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../services/route_anlayzer.dart';
+import '../../services/route_anlayzer.dart';
 
 class RouteScreen extends StatefulWidget {
   final GeoPoint startLocation;
@@ -60,7 +60,6 @@ class _RouteScreenState extends State<RouteScreen> {
     response.sort((a, b) => (b['safety_score'] ?? 0).compareTo(a['safety_score'] ?? 0));
 
     setState(() {
-      
       routes = response;
       isLoading = false;
     });
@@ -201,7 +200,9 @@ class _RouteScreenState extends State<RouteScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
   onPressed: () async {
-    final String? url = route['directions_link'];
+    final url = route['direction_link'];
+    print(url);
+    
     if (url == null || url.isEmpty) {
       // Handle case where URL is null or empty
       ScaffoldMessenger.of(context).showSnackBar(
@@ -211,8 +212,7 @@ class _RouteScreenState extends State<RouteScreen> {
       );
       return;
     }
-
-    final Uri uri = Uri.parse(url);
+    final Uri uri = Uri.parse(url as String);
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
