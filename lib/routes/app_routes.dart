@@ -3,6 +3,7 @@ import 'package:safety_app/screens/safe-route/route_map.dart';
 import 'package:safety_app/screens/settings/safety_tips_screen.dart';
 import 'package:safety_app/screens/initial/splash_screen.dart';
 import 'package:safety_app/screens/initial/onboarding_screen.dart';
+import '../screens/community_chat/community_chat_screen.dart';
 import '../screens/home/map_screen.dart';
 import '../screens/initial/login_screen.dart';
 import '../screens/initial/signup_screen.dart';
@@ -26,6 +27,7 @@ class AppRoutes {
   static const String emergency= '/find-support'; 
   static const String signup= '/signup-screen'; 
   static const String login= '/login-screen';
+  static const String community= '/community-screen';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -41,6 +43,7 @@ class AppRoutes {
       privacySettings: (context) => PrivacySettingsScreen(),
       mapScreen: (context) => MapScreen(),
       emergency: (context) => EmergencyScreen(),
+      community:  (context) => CommunityChatScreen(),
     };
   }
 }

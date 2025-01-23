@@ -1,5 +1,3 @@
-// ignore_for_file: unused_local_variable
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
@@ -11,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/constants.dart';
-// import 'package:direct_caller_sim_choice/direct_caller_sim_choice.dart';
+
 
 class EmergencyScreen extends StatefulWidget {
   @override
@@ -84,7 +82,7 @@ void loadAllEmergencyContacts() async {
     final double latitude = _currentLocation!.latitude!;
     final double longitude = _currentLocation!.longitude!;
     final Uri url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$latitude,$longitude&radius=1500&type=police|hospital|point_of_interest&key=$googleMapsApiKey',
+      'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$latitude,$longitude&radius=1200&type=police|hospital|point_of_interest&key=$googleMapsApiKey',
     );
     final response = await http.get(url);
     if (response.statusCode == 200) {

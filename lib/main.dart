@@ -13,20 +13,29 @@ void main() async {
   // Get the saved theme preference
   final prefs = await SharedPreferences.getInstance();
   final bool isDarkMode = prefs.getBool('isDarkMode') ?? false;
-   // Default to light theme
+  
+  // Check if it's the first time the app is launched
+  final bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
-      child: SafetyCompanionApp(isDarkMode: isDarkMode),
+      child: SafetyCompanionApp(
+        isDarkMode: isDarkMode,
+        isFirstTime: isFirstTime,
+      ),
     ),
   );
 }
 
 class SafetyCompanionApp extends StatelessWidget {
   final bool isDarkMode;
+  final bool isFirstTime;
 
-  SafetyCompanionApp({required this.isDarkMode});
+  SafetyCompanionApp({
+    required this.isDarkMode, 
+    required this.isFirstTime,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +45,8 @@ class SafetyCompanionApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light, 
-      initialRoute: AppRoutes.home,
-      routes: AppRoutes.routes,
+      initialRoute: AppRoutes.home, // Always start with SplashScreen
+      routes: AppRoutes.routes, 
     );
   }
 }

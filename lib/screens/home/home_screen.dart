@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safety_app/screens/community_chat/community_chat_screen.dart';
 import 'package:safety_app/screens/emergency/emergency_screen.dart';
 import 'package:safety_app/screens/safe-route/route_map.dart';
 import '../../routes/app_routes.dart';
@@ -23,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
        MapScreen(),
        EmergencyScreen(),
        MapRouteScreen(),
+       CommunityChatScreen(),
      ];
   }
 

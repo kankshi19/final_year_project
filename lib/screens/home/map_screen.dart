@@ -14,7 +14,7 @@ class _MapScreenState extends State<MapScreen> {
   LocationData? _currentLocation;
   late Location _location;
   String _zone = "Fetching zone...";
-  final double _radius = 1000; // Radius in meters for the Google Places API query
+  final double _radius = 200; // Radius in meters for the Google Places API query
   List<CircleMarker> _zoneMarkers = [];
 
   // Replace with your Google API key

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safety_app/screens/safe-route/route_map.dart';
+import 'package:safety_app/utils/constants.dart';
 
 class BottomNavBarWidget extends StatefulWidget {
   final int currentIndex;
@@ -18,20 +18,25 @@ class _BottomNavBarWidgetState extends State<BottomNavBarWidget> {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
+      backgroundColor: primaryColor,
       currentIndex: widget.currentIndex,
       onTap: widget.onTap, // This is where you handle the navigation
       items: [
-        const BottomNavigationBarItem(
+        BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: 'Home',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.find_in_page),
-          label: 'Find Support',
+          label: 'Support',
         ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.map),
           label: 'SafeRoute',
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.chat),
+          label: 'Chat',
         ),
       ],
     );

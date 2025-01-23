@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
 import 'package:flutter_native_contact_picker/model/contact.dart';
 import 'package:safety_app/screens/emergency/emergency_screen.dart';
+import 'package:safety_app/utils/constants.dart';
 import '../../routes/app_routes.dart';
 import 'safety_preferences_screen.dart';
 
@@ -18,7 +19,6 @@ class _UserProfileState extends State<UserProfile> {
   String? email;
   String? profilePicUrl;
   List<Map<String, String>> emergencyContacts = [];
-  // List<Contact?> emergencyContacts = [];
   bool isLoading = true;
 
   @override
@@ -163,7 +163,7 @@ class _UserProfileState extends State<UserProfile> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("User Profile"),
-        backgroundColor: const Color.fromARGB(255, 58, 156, 183),
+        backgroundColor: primaryColor,
         elevation: 0,
       ),
       body: isLoading
@@ -202,18 +202,18 @@ class _UserProfileState extends State<UserProfile> {
                     const SizedBox(height: 20),
                     // Emergency Contact
                     ListTile(
-                      leading: const Icon(Icons.phone, color: Color.fromARGB(255, 58, 156, 183)),
+                      leading: const Icon(Icons.phone, color: primaryColor),
                       title: const Text("Emergency Contacts"),
                       subtitle: Text("${emergencyContacts.length} contacts"),
                       trailing: IconButton(
-                        icon: const Icon(Icons.edit, color: Color.fromARGB(255, 58, 156, 183)),
+                        icon: const Icon(Icons.edit, color: primaryColor),
                         onPressed: () => _showEmergencyContactsDialog(context),
                       ),
                     ),
                     const Divider(),
                     // Emergency Screen Navigation
                     ListTile(
-                      leading: const Icon(Icons.emergency, color: Color.fromARGB(255, 58, 156, 183)),
+                      leading: const Icon(Icons.emergency, color: primaryColor),
                       title: const Text("Emergency & Nearby Support"),
                       subtitle: const Text("Access emergency features"),
                       onTap: () {
@@ -226,7 +226,7 @@ class _UserProfileState extends State<UserProfile> {
                     const Divider(),
                     // Safety Preferences Section
                     ListTile(
-                      leading: const Icon(Icons.shield, color: Color.fromARGB(255, 58, 156, 183)),
+                      leading: const Icon(Icons.shield, color: primaryColor),
                       title: const Text("Safety Preferences"),
                       subtitle: const Text("Customize your safety settings."),
                       onTap: () {
@@ -239,7 +239,7 @@ class _UserProfileState extends State<UserProfile> {
                     const Divider(),
                     // Device Management Section
                     ListTile(
-                      leading: const Icon(Icons.device_hub, color: Color.fromARGB(255, 58, 156, 183)),
+                      leading: const Icon(Icons.device_hub, color: primaryColor),
                       title: const Text("Device Management"),
                       subtitle: const Text("Manage your wearable device."),
                       onTap: () {
@@ -251,10 +251,10 @@ class _UserProfileState extends State<UserProfile> {
                     const SizedBox(height: 20),
                     ElevatedButton.icon(
                       onPressed: () => _showSignOutDialog(context),
-                      icon: const Icon(Icons.logout),
+                      icon: const Icon(Icons.logout,color: Colors.white,),
                       label: const Text("Sign Out"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 58, 156, 183),
+                        backgroundColor: primaryColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
