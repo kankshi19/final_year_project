@@ -208,7 +208,7 @@ Future<void> _makeCall(String phoneNumber) async {
     setState(() {
       emergencyContacts.removeAt(index);
       // Optionally remove from Firestore as well
-      // FirebaseFirestore.instance.collection('emergency_contacts').doc(contactId).delete();
+      // FirebaseFirestore.instance.collection('emergency_contacts').doc().delete();
     });
   }
 
