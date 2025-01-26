@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safety_app/screens/chat-bot/chatbot_screen.dart';
 import 'package:safety_app/screens/safe-route/route_map.dart';
 import 'package:safety_app/screens/settings/safety_tips_screen.dart';
 import 'package:safety_app/screens/initial/splash_screen.dart';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const String signup= '/signup-screen'; 
   static const String login= '/login-screen';
   static const String community= '/community-screen';
+  static const String chatbot = '/chat-bot';
 
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -44,6 +46,7 @@ class AppRoutes {
       mapScreen: (context) => MapScreen(),
       emergency: (context) => EmergencyScreen(),
       community:  (context) => CommunityChatScreen(),
+      chatbot: (context) => ChatbotScreen(),
     };
   }
 }

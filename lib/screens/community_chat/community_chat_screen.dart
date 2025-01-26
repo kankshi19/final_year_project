@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:safety_app/utils/constants.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CommunityChatScreen extends StatefulWidget {
   @override
@@ -43,6 +44,19 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
       }
     } catch (e) {
       print('Error adding user to community: $e');
+    }
+  }
+   void _launchURL(String url) async {
+    try {
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch $url'))
+        );
+      }
+    } catch (e) {
+      print('Error launching URL: $e');
     }
   }
 
@@ -121,6 +135,32 @@ Future<void> _shareLocation() async {
     super.dispose();
   }
 
+  Widget _buildMessageContent(String messageText, bool isCurrentUser) {
+    // Check if message is a location link
+    final locationLinkRegex = RegExp(r'My Location: (https://www\.google\.com/maps\?q=[-?\d.,]+)');
+    final match = locationLinkRegex.firstMatch(messageText);
+
+    if (match != null) {
+      final url = match.group(1)!;
+      return GestureDetector(
+        onTap: () => _launchURL(url),
+        child: Text(
+          messageText,
+          style: TextStyle(
+            fontSize: 16.0, 
+            color: Colors.blue, 
+            decoration: TextDecoration.underline
+          ),
+        ),
+      );
+    }
+
+    // Regular text message
+    return Text(
+      messageText, 
+      style: TextStyle(fontSize: 16.0)
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -195,14 +235,11 @@ Future<void> _shareLocation() async {
                                   children: [
                                     Text(sender, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0, color: Colors.teal[800])),
                                     SizedBox(height: 4.0),
-                                    Text(messageText, style: TextStyle(fontSize: 16.0)),
-                                    if (formattedTime.isNotEmpty) SizedBox(height: 4.0),
-                                    if (formattedTime.isNotEmpty)
-                                      Text(formattedTime, style: TextStyle(fontSize: 12.0, color: Colors.grey[600])),
-                                    Row(
-                                      mainAxisAlignment:
-                                          isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-                                    ),
+                                    _buildMessageContent(messageText, isCurrentUser),
+                                if (formattedTime.isNotEmpty) SizedBox(height: 4.0),
+                                if (formattedTime.isNotEmpty)
+                                  Text(formattedTime, style: TextStyle(fontSize: 12.0, color: Colors.grey[600])),
+                              
                                   ],
                                 ),
                               ),

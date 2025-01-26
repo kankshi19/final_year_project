@@ -24,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
        MapScreen(),
        EmergencyScreen(),
        MapRouteScreen(),
-       CommunityChatScreen(),
      ];
   }
 
@@ -35,12 +34,28 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('NirBhaya'),
         backgroundColor: Color.fromARGB(255, 62, 170, 165),
         actions: [
+          
+          IconButton(
+            icon: const Icon(Icons.groups),
+            onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.community); // Redirect to community screen
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.support_agent),
+            onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.chatbot); // Redirect to chatbot screen
+            },
+
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
                   Navigator.pushNamed(context, AppRoutes.settings); // Redirect to settings screen
             },
+
           ),
+
         ],
       ),
       body: _screens[_currentIndex], 

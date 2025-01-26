@@ -63,6 +63,8 @@ dependencies:
   flutter_dotenv: ^5.0.2
   google_maps_flutter: ^2.10.0
   intl: ^0.20.1
+  flutter_chat_ui: ^1.0.5
+  flutter_chat_types: ^3.6.2
   
 
 
