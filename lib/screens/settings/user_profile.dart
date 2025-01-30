@@ -6,6 +6,7 @@ import 'package:flutter_native_contact_picker/model/contact.dart';
 import 'package:safety_app/screens/emergency/emergency_screen.dart';
 import 'package:safety_app/utils/constants.dart';
 import '../../routes/app_routes.dart';
+import 'manage_device_screen.dart';
 import 'safety_preferences_screen.dart';
 
 class UserProfile extends StatefulWidget {
@@ -243,7 +244,7 @@ class _UserProfileState extends State<UserProfile> {
                       title: const Text("Device Management"),
                       subtitle: const Text("Manage your wearable device."),
                       onTap: () {
-                        // Navigate to Device Management screen
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ManageWearableScreen()));
                       },
                     ),
                     const Divider(),

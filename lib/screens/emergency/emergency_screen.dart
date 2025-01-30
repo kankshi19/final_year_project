@@ -82,7 +82,7 @@ void loadAllEmergencyContacts() async {
     final double latitude = _currentLocation!.latitude!;
     final double longitude = _currentLocation!.longitude!;
     final Uri url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$latitude,$longitude&radius=1200&type=police|hospital|point_of_interest&key=$googleMapsApiKey',
+      'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$latitude,$longitude&radius=1500&type=police|hospital|point_of_interest&key=$googleMapsApiKey',
     );
     final response = await http.get(url);
     if (response.statusCode == 200) {
