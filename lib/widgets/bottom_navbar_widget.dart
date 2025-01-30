@@ -14,100 +14,126 @@ class BottomNavBarWidget extends StatefulWidget {
   _BottomNavBarWidgetState createState() => _BottomNavBarWidgetState();
 }
 
-class _BottomNavBarWidgetState extends State<BottomNavBarWidget> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  Widget _buildAnimatedIcon(IconData icon, bool isSelected) {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: isSelected 
-            ? 1 + _animationController.value * 0.3 
-            : 1.0,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isSelected 
-                ? primaryColor.withOpacity(0.2) 
-                : Colors.transparent,
-            ),
-            padding: const EdgeInsets.all(8),
-            child: Icon(
-              icon,
-              color: primaryColor,
-              size: isSelected ? 28 : 24,
-            ),
-          ),
-        );
-      },
-    );
-  }
+class _BottomNavBarWidgetState extends State<BottomNavBarWidget> {
+  bool _isDarkMode = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            spreadRadius: 1,
-            blurRadius: 10,
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Main Navigation Bar
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: _isDarkMode ? Color(0xFF1A1A1A) : Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildNavItem(
+                  icon: Icons.emergency_rounded,
+                  isSelected: widget.currentIndex == 0,
+                  onTap: () => widget.onTap(0),
+                ),
+                _buildNavItem(
+                  icon: Icons.groups_outlined,
+                  isSelected: widget.currentIndex == 1,
+                  onTap: () => widget.onTap(1),
+                ),
+                // Placeholder for FAB
+                SizedBox(width: 60),
+                _buildNavItem(
+                  icon: Icons.route_outlined,
+                  isSelected: widget.currentIndex == 3,
+                  onTap: () => widget.onTap(3),
+                ),
+                _buildNavItem(
+                  icon: Icons.person_rounded,
+                  isSelected: widget.currentIndex == 4,
+                  onTap: () => widget.onTap(4),
+                ),
+              ],
+            ),
+          ),
         ),
-        child: BottomNavigationBar(
-          backgroundColor: Colors.white,
-          selectedItemColor: primaryColor,
-          unselectedItemColor: Colors.grey,
-          currentIndex: widget.currentIndex,
-          type: BottomNavigationBarType.fixed,
-          onTap: (index) {
-            _animationController.reset();
-            _animationController.forward();
-            widget.onTap(index);
-          },
-          items: [
-            BottomNavigationBarItem(
-              icon: _buildAnimatedIcon(Icons.home, widget.currentIndex == 0),
-              label: 'Home',
+        // Floating Action Button
+        Positioned(
+          top: -5,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: GestureDetector(
+              onTap: () => widget.onTap(2),
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: primaryColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withOpacity(0.3),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.emergency_share,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: _buildAnimatedIcon(Icons.find_in_page, widget.currentIndex == 1),
-              label: 'Support',
-            ),
-            BottomNavigationBarItem(
-              icon: _buildAnimatedIcon(Icons.map, widget.currentIndex == 2),
-              label: 'SafeRoute',
-            ),
-          ],
+          ),
+        ),
+        
+      ],
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (_isDarkMode ? Colors.white12 : Colors.black.withOpacity(0.05))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          icon,
+          size: 24,
+          color: isSelected
+              ? (_isDarkMode ? Colors.white : Colors.black87)
+              : (_isDarkMode ? Colors.white38 : Colors.black38),
         ),
       ),
     );
   }
 }
+
+// Add this to your constants.dart file:
+/*
+const primaryColor = Color(0xFF7E3EE8);
+const secondaryColor = Color(0xFF1A1A1A);
+*/

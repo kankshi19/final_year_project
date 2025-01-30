@@ -67,9 +67,15 @@ dependencies:
   flutter_chat_types: ^3.6.2
   flutter_blue_plus: ^1.0.0
   firebase_database: ^11.3.0
+  speech_to_text: ^6.1.1
+  flutter_tts: ^3.6.3
+  animated_text_kit: ^4.2.2
+  audioplayers: ^6.1.1
+  image_picker: ^1.1.2
+  file_picker: ^8.3.1
+  video_player: ^2.9.2
+
   
-
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
