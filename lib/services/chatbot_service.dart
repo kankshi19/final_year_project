@@ -140,7 +140,11 @@ Remember to maintain context from previous messages and respond naturally while 
     // Remove any potential prompt artifacts or system messages
     final cleanedResponse = response
         .replaceAll(RegExp(r'Eva:|Assistant:|AI:|Bot:', caseSensitive: false), '')
-        .trim();
+        .trim()
+        .replaceAll('#', '')
+        .replaceAll('*', '')
+        .replaceAll('**', '');
+        
     
     // Ensure the response doesn't contain any internal instructions
     final responseLines = cleanedResponse.split('\n')

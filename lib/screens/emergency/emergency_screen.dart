@@ -227,7 +227,7 @@ Future<void> _makeCall(String phoneNumber) async {
     setState(() {
       emergencyContacts.removeAt(index);
       // Optionally remove from Firestore as well
-      // FirebaseFirestore.instance.collection('emergency_contacts').doc().delete();
+      FirebaseFirestore.instance.collection('emergency_contacts').doc().delete();
     });
   }
 
@@ -241,38 +241,40 @@ Future<void> _makeCall(String phoneNumber) async {
       );
     }
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _buildSOSButton(),
-                SizedBox(height: 24),
-              ],
+    return Material(
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildSOSButton(),
+                  SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: _buildEmergencyServicesSection(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _buildEmergencyServicesSection(),
+            ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: _buildPersonalContactsSection(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: _buildPersonalContactsSection(),
+            ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: _buildNearbySupportSection(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: _buildNearbySupportSection(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

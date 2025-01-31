@@ -37,12 +37,12 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('NirBhaya'),
         backgroundColor: Color.fromARGB(255, 62, 170, 165),
         actions: [
-          
           IconButton(
-            icon: const Icon(Icons.groups),
+            icon: const Icon(Icons.notifications),
             onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.community); // Redirect to community screen
+                  Navigator.pushNamed(context, AppRoutes.notificationSettings); // Redirect to notifications screen
             },
+
           ),
           IconButton(
             icon: const Icon(Icons.support_agent),
