@@ -3,9 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safety_app/screens/home/home_screen.dart';
-import 'package:safety_app/screens/initial/login_screen.dart';
+import 'package:safety_app/screens/initial(User)/login_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:safety_app/screens/initial(User)/setup_user.dart';
 import '../../routes/app_routes.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -66,43 +66,41 @@ class _SignupScreenState extends State<SignupScreen> {
   try {
     User? user = await loginWithGoogle();
     if (user != null) {
-      // Check if the user exists in Firestore before adding
       DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
       if (!userDoc.exists) {
-        // Adding user details only if user doesn't exist in Firestore
+        // If the user doesn't exist, store initial Google details without phoneNumber
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'name': user.displayName,
-          'email': user.email,
-          'photoUrl': user.photoURL,
-          'phoneNumber': user.phoneNumber,
+          'name': user.displayName ?? '',
+          'email': user.email ?? '',
+          'photoUrl': user.photoURL ?? '',
+          'phoneNumber': '', // Initially empty
         });
       }
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Sign up Sucessful"),
-          content: Text("You have signed up successfully "),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("OK"),
-            ),
-          ],
-        ),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User signed up successfully!")));
-      // Navigate to home screen after user data is saved
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
+
+      // Check if the user has a phone number
+      if (!userDoc.exists || !userDoc.data().toString().contains('phoneNumber') || userDoc['phoneNumber'] == '') {
+        // If phone number is missing, navigate to CompleteSetupPage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => CompleteSetupPage()),
+        );
+      } else {
+        // Otherwise, go to the home screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      }
     }
   } catch (e) {
-    print('Error during Google SignUp: $e');
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sign up failed. Please try again.')));
+    print('Error during Google Sign-Up: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Sign up failed. Please try again.')),
+    );
   }
 }
+
 
 
       void _signUp() async {

@@ -65,6 +65,8 @@ dependencies:
   intl: ^0.20.1
   flutter_chat_ui: ^1.0.5
   flutter_chat_types: ^3.6.2
+  firebase_database: ^11.3.1
+  
   
 
 

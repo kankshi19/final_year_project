@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:safety_app/screens/initial/login_screen.dart';
+import 'package:safety_app/screens/initial(User)/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../home/home_screen.dart';
 import 'onboarding_screen.dart'; // Import the OnboardingScreen

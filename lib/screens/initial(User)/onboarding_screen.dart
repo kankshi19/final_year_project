@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:safety_app/screens/initial/login_screen.dart';
+//import 'package:safety_app/screens/initial(User)/login_screen.dart';
+import 'package:safety_app/screens/initial(User)/user_type_selection_screen.dart';
 import 'dart:async';
 
 class OnboardingScreen extends StatefulWidget {
@@ -90,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => LoginScreen(),
+                      builder: (context) => UserTypeSelectionScreen(),
                     ),
                   );
                 },
@@ -111,7 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => LoginScreen(),
+                        builder: (context) => UserTypeSelectionScreen(),
                       ),
                     );
                   } else {

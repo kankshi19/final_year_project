@@ -4,6 +4,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'parent_chat_screen.dart'; // Import ParentChatScreen
 
 class MapScreen extends StatefulWidget {
   @override
@@ -16,6 +19,8 @@ class _MapScreenState extends State<MapScreen> {
   String _zone = "Fetching zone...";
   final double _radius = 200; // Radius in meters for the Google Places API query
   List<CircleMarker> _zoneMarkers = [];
+  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
+  User? _user;
 
   // Replace with your Google API key
   final String apiKey = "AIzaSyBNshGF10FPBnYO4oaYTnN2Lxuu580rxd8";
@@ -24,6 +29,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _location = Location();
+    _user = FirebaseAuth.instance.currentUser;
     _getCurrentLocation();
   }
 
@@ -37,10 +43,35 @@ class _MapScreenState extends State<MapScreen> {
       if (_currentLocation != null) {
         double lat = _currentLocation!.latitude!;
         double lon = _currentLocation!.longitude!;
+
+        // Send location to Firebase Realtime Database
+        await _saveLocationToFirebase(lat, lon);
+
+        // Fetch crowd data based on location
         await _fetchCrowdData(lat, lon);
       }
     } catch (e) {
       print("Error getting location: $e");
+    }
+  }
+
+   Future<void> _saveLocationToFirebase(double lat, double lon) async {
+    try {
+      if (_user != null) {
+        DatabaseReference userRef = _dbRef.child("users/${_user!.uid}/location");
+
+        await userRef.set({
+          "latitude": lat,
+          "longitude": lon,
+          "timestamp": DateTime.now().millisecondsSinceEpoch, // Store timestamp
+        });
+
+        print("📍 Location updated successfully in Realtime Database!");
+      } else {
+        print("⚠️ User not logged in!");
+      }
+    } catch (e) {
+      print("❌ Error saving location to Firebase: $e");
     }
   }
 
@@ -54,13 +85,8 @@ class _MapScreenState extends State<MapScreen> {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        // Parse the response JSON
         final Map<String, dynamic> data = json.decode(response.body);
-
-        // Analyze crowd data
         int totalPlaces = _analyzePlaces(data);
-
-        // Determine the zone based on the number of nearby places
         String zone = _classifyZone(totalPlaces);
 
         setState(() {
@@ -81,8 +107,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  int _analyzePlaces(Map<String, dynamic> data) {
-    // Analyze the number of places in the response
+   int _analyzePlaces(Map<String, dynamic> data) {
     if (data.containsKey("results")) {
       return data["results"].length;
     }
@@ -121,14 +146,12 @@ class _MapScreenState extends State<MapScreen> {
     ];
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     if (_currentLocation == null) {
       return Scaffold(
-        // appBar: AppBar(
-        //   title: const Text('Live location tracking'),
-        //   backgroundColor: Color.fromARGB(255, 62, 170, 165),
-        // ),
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -139,6 +162,20 @@ class _MapScreenState extends State<MapScreen> {
     );
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text("Safe Zone Map"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.chat),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ParentChatScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           FlutterMap(
