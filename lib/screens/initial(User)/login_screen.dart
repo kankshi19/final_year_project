@@ -114,10 +114,10 @@ class _LoginScreenState extends State<LoginScreen> {
           if (storedPassword == password) {
             // If the passwords match, proceed with Firebase Auth sign-in (using email and password)
             // Sign in with Firebase Authentication (assuming Firebase Auth has been set up for email/password)
-            UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-              email: email,
-              password: password,
-            );
+            // UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+            //   email: email,
+            //   password: password,
+            // );
 
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Logged In Successfully")));
 

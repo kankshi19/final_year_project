@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:safety_app/screens/community_chat/community_chat_screen.dart';
 import 'package:safety_app/screens/emergency/emergency_screen.dart';
 import 'package:safety_app/screens/safe-route/route_map.dart';
+import 'package:safety_app/screens/settings/user_profile.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/bottom_navbar_widget.dart';
 import 'map_screen.dart';
@@ -14,16 +15,18 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  int _currentIndex = 2;
   late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
     _screens = [
-       MapScreen(),
        EmergencyScreen(),
+       CommunityChatScreen(),
+       MapScreen(),
        MapRouteScreen(),
+       UserProfile(),
      ];
   }
 
@@ -34,12 +37,12 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('NirBhaya'),
         backgroundColor: Color.fromARGB(255, 62, 170, 165),
         actions: [
-          
           IconButton(
-            icon: const Icon(Icons.groups),
+            icon: const Icon(Icons.notifications),
             onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.community); // Redirect to community screen
+                  Navigator.pushNamed(context, AppRoutes.notificationSettings); // Redirect to notifications screen
             },
+
           ),
           IconButton(
             icon: const Icon(Icons.support_agent),

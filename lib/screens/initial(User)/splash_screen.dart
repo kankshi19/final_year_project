@@ -1,51 +1,71 @@
+import 'dart:math';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:safety_app/screens/initial(User)/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:animate_do/animate_do.dart';
 import '../home/home_screen.dart';
-import 'onboarding_screen.dart'; // Import the OnboardingScreen
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _logoAnimation;
+  late Animation<double> _textAnimation;
+
   @override
   void initState() {
     super.initState();
+    
+    _controller = AnimationController(
+      duration: Duration(seconds: 2),
+      vsync: this,
+    );
+
+    _logoAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.0, 0.6, curve: Curves.elasticOut),
+      ),
+    );
+
+    _textAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(0.4, 1.0, curve: Curves.easeOut),
+      ),
+    );
+
+    _controller.forward();
     _checkFirstTimeAndAuthentication();
   }
 
   Future<void> _checkFirstTimeAndAuthentication() async {
-    // Wait for the splash screen duration
     await Future.delayed(Duration(seconds: 4));
 
-    // Check if it's first time
     final prefs = await SharedPreferences.getInstance();
     bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
 
     if (isFirstTime) {
-      // Mark app as no longer first-time
       await prefs.setBool('isFirstTime', false);
-      
-      // Navigate to OnboardingScreen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => OnboardingScreen()),
       );
     } else {
-      // Check authentication state
       User? user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
-        // User is logged in, go to HomeScreen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen()),
         );
       } else {
-        // No user logged in, go to LoginScreen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -56,50 +76,190 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Your existing SplashScreen UI remains the same
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color.fromARGB(255, 71, 255, 240),
+               Color.fromARGB(255, 198, 104, 124),
+            ],
+          ),
+        ),
+        child: Stack(
           children: [
-            SizedBox(height: 70),
-            Image.asset(
-              'assets/logo.jpg', 
-              height: 200,
-            ),
-            SizedBox(height: 70),
-            Text(
-              'NirBhaya',
-              style: TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.bold,
+            // Geometric Background Design
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.1,
+                child: CustomPaint(
+                  painter: GeometricBackgroundPainter(),
+                ),
               ),
             ),
-            SizedBox(height: 15),
-            Text(
-              'A Women Safety App',
-              style: TextStyle(
-                fontSize: 20,
+            
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FadeTransition(
+                    opacity: _logoAnimation,
+                    child: ScaleTransition(
+                      scale: _logoAnimation,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 20,
+                              offset: Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 100,
+                          backgroundColor: Colors.white,
+                          child: Image.asset(
+                            'assets/logo.jpg', 
+                            height: 150,
+                            width: 150,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                  FadeTransition(
+                    opacity: _textAnimation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(0, 0.5),
+                        end: Offset.zero,
+                      ).animate(_controller),
+                      child: Column(
+                        children: [
+                          Text(
+                            'NirBhaya',
+                            style: TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1.2,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 10.0,
+                                  color: Colors.black45,
+                                  offset: Offset(3.0, 3.0),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Women Safety Companion',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 50),
+                  FadeTransition(
+                    opacity: _textAnimation,
+                    child: Container(
+                      width: 250,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: LinearProgressIndicator(
+                        backgroundColor: Colors.white24,
+                        color: Colors.white,
+                        minHeight: 6,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 70),
-            SizedBox(
-              width: 200,
-              child: LinearProgressIndicator(
-                backgroundColor: const Color.fromARGB(255, 197, 137, 165),
-                color: Color.fromARGB(255, 105, 12, 45),
+            
+            // Copyright
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: FadeTransition(
+                opacity: _textAnimation,
+                child: Text(
+                  "© 2025 NirBhaya",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white70,
+                  ),
+                ),
               ),
             ),
-            SizedBox(height: 250),
-            Text(
-              "© 2025 NirBhaya",
-              style: TextStyle(
-                fontSize: 11,
-              ),
-            )
           ],
         ),
       ),
     );
   }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class GeometricBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    // Draw random geometric shapes
+    final random = Random();
+    for (int i = 0; i < 50; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      
+      // Randomly choose shape
+      if (random.nextBool()) {
+        // Triangle
+        final path = Path();
+        path.moveTo(x, y);
+        path.lineTo(x + random.nextDouble() * 50, y + random.nextDouble() * 50);
+        path.lineTo(x - random.nextDouble() * 50, y + random.nextDouble() * 50);
+        path.close();
+        canvas.drawPath(path, paint);
+      } else {
+        // Circle
+        canvas.drawCircle(
+          Offset(x, y), 
+          random.nextDouble() * 20, 
+          paint
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -16,18 +16,37 @@ class EmergencyScreen extends StatefulWidget {
   _EmergencyScreenState createState() => _EmergencyScreenState();
 }
 
-class _EmergencyScreenState extends State<EmergencyScreen> {
+class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProviderStateMixin {
   List<Contact?> emergencyContacts = [];
   List<Map<String, dynamic>> nearbyPlaces = [];
   LocationData? _currentLocation;
   final Location location = Location();
-  final String googleMapsApiKey = 'AIzaSyBNshGF10FPBnYO4oaYTnN2Lxuu580rxd8'; // Replace with your API key
+  final String googleMapsApiKey = 'AIzaSyBNshGF10FPBnYO4oaYTnN2Lxuu580rxd8';
+  late AnimationController _sosAnimationController;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _sosAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
     _getCurrentLocation();
     loadAllEmergencyContacts();
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _sosAnimationController.dispose();
+    super.dispose();
   }
 
   
@@ -82,7 +101,7 @@ void loadAllEmergencyContacts() async {
     final double latitude = _currentLocation!.latitude!;
     final double longitude = _currentLocation!.longitude!;
     final Uri url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$latitude,$longitude&radius=1200&type=police|hospital|point_of_interest&key=$googleMapsApiKey',
+      'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=$latitude,$longitude&radius=1500&type=police|hospital|point_of_interest&key=$googleMapsApiKey',
     );
     final response = await http.get(url);
     if (response.statusCode == 200) {
@@ -208,174 +227,508 @@ Future<void> _makeCall(String phoneNumber) async {
     setState(() {
       emergencyContacts.removeAt(index);
       // Optionally remove from Firestore as well
-      // FirebaseFirestore.instance.collection('emergency_contacts').doc().delete();
+      FirebaseFirestore.instance.collection('emergency_contacts').doc().delete();
     });
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // appBar: AppBar(
-      //   title: Text('Emergency & Nearby Support'),
-      //   backgroundColor: primaryColor,
-      // ),
-      body: SingleChildScrollView(
-      child: Column(
-        children: [
-          // Emergency Contacts Card
-          Card(
-            margin: EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Predefined Emergency Contacts Section
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Text(
-                    'Emergency Services',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: emergencyContacts
-                      .where((contact) => 
-                          ['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
-                      .length,
-                  itemBuilder: (context, index) {
-                    final predefinedContacts = emergencyContacts
-                        .where((contact) => 
-                            ['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
-                        .toList();
-                    final contact = predefinedContacts[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: primaryColor.withOpacity(0.1),
-                        child: Icon(Icons.local_police, color: primaryColor),
-                      ),
-                      title: Text(contact?.fullName ?? 'Unknown'),
-                      subtitle: Text(contact != null && contact.phoneNumbers!.isNotEmpty 
-                          ? contact.phoneNumbers?.first ?? '' 
-                          : 'No number'),
-                      trailing: IconButton(
-                        icon: Icon(Icons.call, color: primaryColor),
-                        onPressed: () {
-                          if (contact != null && contact.phoneNumbers!.isNotEmpty) {
-                            final String phoneNumber = contact.phoneNumbers!.first;
-                            _makeCall(phoneNumber);
-                          }
-                        },
-                      ),
-                    );
-                  },
-                ),
-                
-                // Personal Emergency Contacts Section
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Personal Emergency Contacts',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add, color: primaryColor),
-                        onPressed: _addEmergencyContact,
-                      ),
-                    ],
-                  ),
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: emergencyContacts
-                      .where((contact) => 
-                          !['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
-                      .length,
-                  itemBuilder: (context, index) {
-                    final personalContacts = emergencyContacts
-                        .where((contact) => 
-                            !['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
-                        .toList();
-                    final contact = personalContacts[index];
-                    return Dismissible(
-                      key: Key(contact?.fullName ?? ''),
-                      background: Container(color: Colors.red),
-                      onDismissed: (direction) {
-                        final fullIndex = emergencyContacts.indexOf(contact);
-                        _deleteContact(fullIndex);
-                      },
-                      child: ListTile(
-                        leading: CircleAvatar(child: Icon(Icons.person)),
-                        title: Text(contact?.fullName ?? 'Unknown'),
-                        subtitle: Text(contact != null && contact.phoneNumbers!.isNotEmpty 
-                            ? contact.phoneNumbers?.first ?? '' 
-                            : 'No number'),
-                        trailing: IconButton(
-                          icon: Icon(Icons.call, color: primaryColor),
-                          onPressed: () {
-                            if (contact != null && contact.phoneNumbers!.isNotEmpty) {
-                              final String phoneNumber = contact.phoneNumbers!.first;
-                              _makeCall(phoneNumber);
-                            }
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+    if (_isLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+        ),
+      );
+    }
+
+    return Material(
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildSOSButton(),
+                  SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
-          
-          // SOS Button
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: _sendSOS,
-              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-              child: Text('Send SOS'),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _buildEmergencyServicesSection(),
             ),
           ),
-          
-          // Nearby Places Card
-          Card(
-            margin: EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Text(
-                    'Nearby Support Centers',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: nearbyPlaces.length,
-                  itemBuilder: (context, index) {
-                    final place = nearbyPlaces[index];
-                    return ListTile(
-                      leading: CircleAvatar(child: Icon(Icons.place)),
-                      title: Text(place['name']),
-                      trailing: IconButton(
-                        icon: Icon(Icons.directions, color: primaryColor),
-                        onPressed: () => _openGoogleMaps(place['lat'], place['lng']),
-                      ),
-                    );
-                  },
-                ),
-              ],
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: _buildPersonalContactsSection(),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: _buildNearbySupportSection(),
             ),
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _buildSOSButton() {
+    return AnimatedBuilder(
+      animation: _sosAnimationController,
+      builder: (context, child) {
+        return GestureDetector(
+          onTap: _sendSOS,
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFF4B4B),
+                  Color(0xFFFF6B6B),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFFFF4B4B).withOpacity(0.3),
+                  blurRadius: 12 + (_sosAnimationController.value * 12),
+                  spreadRadius: 2 + (_sosAnimationController.value * 4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.emergency,
+                  color: Colors.white,
+                  size: 40 + (_sosAnimationController.value * 8),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'SOS',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                ),
+                Text(
+                  'Tap to Send Emergency Alert',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmergencyServicesSection() {
+    final predefinedContacts = emergencyContacts
+        .where((contact) => 
+            ['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
+        .toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromARGB(255, 3, 85, 82).withOpacity(0.5),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.emergency_share,
+                    color: primaryColor,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Emergency Services',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: predefinedContacts.length,
+            separatorBuilder: (context, index) => Divider(height: 1),
+            itemBuilder: (context, index) {
+              final contact = predefinedContacts[index];
+              return _buildEmergencyContactTile(
+                contact: contact!,
+                icon: _getEmergencyServiceIcon(contact.fullName ?? ''),
+                color: _getEmergencyServiceColor(contact.fullName ?? ''),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalContactsSection() {
+    final personalContacts = emergencyContacts
+        .where((contact) => 
+            !['Police', 'Women Helpline', 'Ambulance'].contains(contact?.fullName))
+        .toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromARGB(255, 3, 85, 82).withOpacity(0.5),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.people_alt_outlined,
+                        color: primaryColor,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Trusted Contacts',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.add,
+                      color: primaryColor,
+                      size: 20,
+                    ),
+                  ),
+                  onPressed: _addEmergencyContact,
+                ),
+              ],
+            ),
+          ),
+          if (personalContacts.isEmpty)
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.people_outline,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'No trusted contacts added yet',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Tap + to add contacts',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: personalContacts.length,
+              separatorBuilder: (context, index) => Divider(height: 1),
+              itemBuilder: (context, index) {
+                final contact = personalContacts[index];
+                return Dismissible(
+                  key: Key(contact?.fullName ?? ''),
+                  background: Container(
+                    color: Colors.red.shade100,
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 20),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                    ),
+                  ),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (direction) {
+                    final fullIndex = emergencyContacts.indexOf(contact);
+                    _deleteContact(fullIndex);
+                  },
+                  child: _buildEmergencyContactTile(
+                    contact: contact!,
+                    icon: Icons.person_outline,
+                    color: primaryColor,
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNearbySupportSection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromARGB(255, 3, 85, 82).withOpacity(0.5),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.location_on_outlined,
+                    color: primaryColor,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Nearby Support Centers',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (nearbyPlaces.isEmpty)
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.location_off_outlined,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'No nearby support centers found',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: nearbyPlaces.length,
+              separatorBuilder: (context, index) => Divider(height: 1),
+              itemBuilder: (context, index) {
+                final place = nearbyPlaces[index];
+                return ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.location_on_outlined,
+                      color: primaryColor,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    place['name'],
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.directions,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
+                    ),
+                    onPressed: () => _openGoogleMaps(place['lat'], place['lng']),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmergencyContactTile({
+    required Contact contact,
+    required IconData icon,
+    required Color color,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        contact.fullName ?? 'Unknown',
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        contact.phoneNumbers?.first ?? 'No number',
+        style: TextStyle(
+          color: Colors.grey,
+        ),
+      ),
+      trailing: IconButton(
+        icon: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.call_outlined,
+            color: Colors.green,
+            size: 20,
+          ),
+        ),
+        onPressed: () {
+          if (contact.phoneNumbers?.isNotEmpty ?? false) {
+            _makeCall(contact.phoneNumbers!.first);
+          }
+        },
+      ),
+    );
+  }
+
+  IconData _getEmergencyServiceIcon(String service) {
+    switch (service) {
+      case 'Police':
+        return Icons.local_police_outlined;
+      case 'Women Helpline':
+        return Icons.woman_outlined;
+      case 'Ambulance':
+        return Icons.medical_services_outlined;
+      default:
+        return Icons.emergency_outlined;
+    }
+  }
+
+  Color _getEmergencyServiceColor(String service) {
+    switch (service) {
+      case 'Police':
+        return Colors.blue;
+      case 'Women Helpline':
+        return Colors.purple;
+      case 'Ambulance':
+        return Colors.red;
+      default:
+        return primaryColor;
+    }
   }
 }

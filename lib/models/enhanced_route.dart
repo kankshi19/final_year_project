@@ -1,7 +1,6 @@
 // lib/models/enhanced_route.dart
 
 import 'package:flutter/material.dart';
-
 import '../services/route_anlayzer.dart';
 
 class EnhancedRoute {

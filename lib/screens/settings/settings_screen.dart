@@ -3,8 +3,8 @@ import 'package:safety_app/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:safety_app/routes/app_routes.dart';
 import 'package:provider/provider.dart';
+import 'package:animate_do/animate_do.dart';
 import '../../theme/theme_provider.dart';
-import '../../widgets/bottom_navbar_widget.dart'; // Assuming you use AppRoutes for navigation
 
 class SettingsScreen extends StatefulWidget {
   @override
@@ -20,7 +20,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadTheme();
   }
 
-  // Load theme preference
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -28,130 +27,204 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  // Save theme preference
   Future<void> _saveTheme(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', value);
   }
 
-  // Toggle theme
   void _toggleTheme(bool value) {
-  setState(() {
-    isDarkMode = value;
-  });
-  _saveTheme(value); // Save the new preference
-  // Trigger theme change in the app
-  final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-  themeProvider.toggleTheme();
-}
+    setState(() {
+      isDarkMode = value;
+    });
+    _saveTheme(value);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    themeProvider.toggleTheme();
+  }
 
   Future<void> _resetAppData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Clears all shared preferences data
-    // Add any additional reset logic here if needed
+    await prefs.clear();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("App data has been reset.")),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-      return Scaffold(
-      appBar: AppBar(
-        title: const Text("Settings"),
-        backgroundColor: primaryColor,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20.0),
-        children: [
-          // Notification Settings
-          ListTile(
-            leading: const Icon(Icons.notifications,
-                color: primaryColor,),
-            title: const Text("Notifications"),
-            subtitle: const Text("Manage notification preferences"),
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.notificationSettings);
-            },
-          ),
-          const Divider(),
-
-          // Privacy Settings
-          ListTile(
-            leading: const Icon(Icons.privacy_tip,
-                color: primaryColor),
-            title: const Text("Privacy"),
-            subtitle: const Text("Manage your privacy settings"),
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.privacySettings);
-            },
-          ),
-          const Divider(),
-
-          // Theme Settings
-          
-          ListTile(
-            leading: const Icon(Icons.color_lens, color:primaryColor),
-            title: const Text("Theme"),
-            subtitle: const Text("Switch between light and dark mode"),
-            trailing: Switch(
-              value: isDarkMode,
-              onChanged: (value) {
-                _toggleTheme(value);
-              },
-            ),
-            onTap: () {
-              _toggleTheme(!isDarkMode); // Toggle the theme when the ListTile is tapped
-            },
-          ),
-          const Divider(),
-
-          // Account Settings
-          ListTile(
-            leading: const Icon(Icons.account_circle,
-                color: primaryColor),
-            title: const Text("Account"),
-            subtitle: const Text("Manage your account settings"),
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.userProfile);
-            },
-          ),
-          const Divider(),
-
-          // Reset App Data
-          ListTile(
-            leading: const Icon(Icons.refresh,
-                color: primaryColor),
-            title: const Text("Reset App"),
-            subtitle: const Text("Clear all app data and settings"),
-            onTap: () {
-              _showResetDialog(context);
-            },
-          ),
-          const Divider(),
-
-          ListTile(
-            leading: const Icon(Icons.favorite,
-                color: primaryColor),
-            title: const Text("Safety Guidlines"),
-            subtitle: const Text("Stay safe and secure"),
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.safetyTips);
-            },
-          ),
-
-          const Divider(),
-
-          // Log Out
-          ListTile(
-            leading: const Icon(Icons.logout,
-                color: primaryColor),
-            title: const Text("Log Out"),
-            onTap: () {
-              _showLogoutDialog(context);
-            },
+  Widget _buildSettingsSection({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, 5),
           ),
         ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
+              ),
+            ),
+          ),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: primaryColor, size: 28),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 12,
+        ),
+      ),
+      trailing: trailing,
+      onTap: onTap,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Settings",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        backgroundColor: primaryColor,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              primaryColor.withOpacity(0.1),
+              Colors.white,
+            ],
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            FadeInUp(
+              child: _buildSettingsSection(
+                title: 'Preferences',
+                children: [
+                  _buildSettingsTile(
+                    icon: Icons.color_lens,
+                    title: 'Theme',
+                    subtitle: 'Switch between light and dark mode',
+                    trailing: Switch(
+                      value: isDarkMode,
+                      onChanged: _toggleTheme,
+                      activeColor: primaryColor,
+                    ),
+                    onTap: () => _toggleTheme(!isDarkMode),
+                  ),
+                ],
+              ),
+            ),
+            
+            FadeInUp(
+              delay: Duration(milliseconds: 200),
+              child: _buildSettingsSection(
+                title: 'Account',
+                children: [
+                  _buildSettingsTile(
+                    icon: Icons.account_circle,
+                    title: 'Account Settings',
+                    subtitle: 'Manage your account details',
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.userProfile),
+                  ),
+                  _buildSettingsTile(
+                    icon: Icons.logout,
+                    title: 'Log Out',
+                    subtitle: 'Securely exit your account',
+                    onTap: () => _showLogoutDialog(context),
+                  ),
+                ],
+              ),
+            ),
+            
+            FadeInUp(
+              delay: Duration(milliseconds: 400),
+              child: _buildSettingsSection(
+                title: 'App Management',
+                children: [
+                  _buildSettingsTile(
+                    icon: Icons.notifications,
+                    title: 'Notifications',
+                    subtitle: 'Manage notification preferences',
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.notificationSettings),
+                  ),
+                  _buildSettingsTile(
+                    icon: Icons.privacy_tip,
+                    title: 'Privacy',
+                    subtitle: 'Manage your privacy settings',
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.privacySettings),
+                  ),
+                  _buildSettingsTile(
+                    icon: Icons.refresh,
+                    title: 'Reset App',
+                    subtitle: 'Clear all app data and settings',
+                    onTap: () => _showResetDialog(context),
+                  ),
+                ],
+              ),
+            ),
+            
+            FadeInUp(
+              delay: Duration(milliseconds: 600),
+              child: _buildSettingsSection(
+                title: 'Additional Resources',
+                children: [
+                  _buildSettingsTile(
+                    icon: Icons.favorite,
+                    title: 'Safety Guidelines',
+                    subtitle: 'Stay safe and secure',
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.safetyTips),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -160,13 +233,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Reset App"),
-        content: const Text(
-            "Are you sure you want to reset all app data? This action cannot be undone."),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Text("Reset App"),
+        content: Text(
+          "Are you sure you want to reset all app data? This action cannot be undone.",
+          style: TextStyle(color: Colors.grey[700]),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Cancel"),
+            child: Text("Cancel", style: TextStyle(color: primaryColor)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -174,9 +252,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _resetAppData();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 58, 156, 183),
+              backgroundColor: primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            child: const Text("Reset"),
+            child: Text("Reset"),
           ),
         ],
       ),
@@ -187,23 +268,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Log Out"),
-        content: const Text("Are you sure you want to log out?"),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Text("Log Out"),
+        content: Text(
+          "Are you sure you want to log out?",
+          style: TextStyle(color: Colors.grey[700]),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Cancel"),
+            child: Text("Cancel", style: TextStyle(color: primaryColor)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
-              // Add FirebaseAuth sign-out logic here
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 58, 156, 183),
+              backgroundColor: primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            child: const Text("Log Out"),
+            child: Text("Log Out"),
           ),
         ],
       ),
