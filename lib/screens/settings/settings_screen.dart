@@ -284,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
+              Navigator.pushReplacementNamed(context, AppRoutes.selection);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,

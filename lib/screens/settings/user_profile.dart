@@ -174,7 +174,7 @@ class _UserProfileState extends State<UserProfile> with SingleTickerProviderStat
 
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
-    Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
+    Navigator.pushReplacementNamed(context, AppRoutes.selection);
   }
 
   @override

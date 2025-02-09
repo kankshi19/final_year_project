@@ -2,24 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:safety_app/screens/home/home_screen.dart';
-import 'package:safety_app/screens/initial(User)/login_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:safety_app/screens/initial(User)/setup_user.dart';
 import '../../routes/app_routes.dart';
+import '../home/home_screen.dart';
+import 'setup_user.dart';
 
 class SignupScreen extends StatefulWidget {
   @override
   _SignupScreenState createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
+  bool _isLoading = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1200),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
+  }
 
   @override
   void dispose() {
@@ -27,6 +42,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -156,142 +172,320 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
-  body: SingleChildScrollView(
-    child: Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 50), // Add some space at the top
-          Center(
-            child: Image.asset('assets/logo.jpg', height: 150),
-          ),
-          SizedBox(height: 20),
-          Center(
-            child: Text(
-              "Sign Up",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ),
-          SizedBox(height: 20),
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: "Full Name",
-              prefixIcon: Icon(Icons.person, color: Color.fromARGB(255, 31, 166, 187)),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          SizedBox(height: 10),
-          TextField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              labelText: "Email",
-              prefixIcon: Icon(Icons.email, color: Color.fromARGB(255, 31, 166, 187)),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          SizedBox(height: 10),
-          TextField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: InputDecoration(
-              labelText: "Phone Number",
-              prefixIcon: Icon(Icons.phone, color: Color.fromARGB(255, 31, 166, 187)),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          SizedBox(height: 10),
-          TextField(
-                  controller: _passwordController,
-                  obscureText: _obscureText,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Colors.blueGrey,
-                        width: 1.5,
-                      ),
-                    ),
-                    prefixIcon:
-                        const Icon(Icons.lock, color: Color.fromARGB(255, 31, 166, 187)),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureText ? Icons.visibility : Icons.visibility_off,
-                        color: const Color.fromARGB(255, 31, 166, 187),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureText = !_obscureText;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              _signUp();
-            },
-            child: Text("Sign Up"),
-            style: ElevatedButton.styleFrom(
-              minimumSize: Size(double.infinity, 50),
-            ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _signUpWithGoogle,
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-              backgroundColor: const Color.fromARGB(255, 236, 78, 57),
-              minimumSize: Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(color: Colors.grey.shade300),
-              ),
-              elevation: 5,
-            ),
-            icon: FaIcon(
-              FontAwesomeIcons.google,
-              color: const Color.fromARGB(255, 255, 255, 255),
-            ),
-            label: Text(
-              'Sign Up with Google',
-              style: TextStyle(
-                color: const Color.fromARGB(255, 255, 255, 255),
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text("Already have an account? "),
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, AppRoutes.login), // Navigate to Login
-                child: Text(
-                  'Log in here',
-                  style: TextStyle(color: Colors.pink),
-                ),
-              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blue.shade50.withOpacity(0.8),
+              Colors.purple.shade50.withOpacity(0.8),
             ],
+            stops: [0.0, 1.0],
           ),
-          SizedBox(height: 20), // Add some space at the bottom
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            physics: BouncingScrollPhysics(),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  children: [
+                    SizedBox(height: 20),
+                    // Enhanced Logo Container
+                    Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF3EAAA5),
+                            Color(0xFFBC4781),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 25,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/logo.jpg',
+                            height: 150,
+                            width: 150,
+                            fit: BoxFit.fitHeight,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 40),
+                    // Enhanced Signup Card
+                    Container(
+                      padding: EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 24,
+                            spreadRadius: 0,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              colors: [Color(0xFF3EAAA5), Color(0xFFBC4781)],
+                            ).createShader(bounds),
+                            child: Text(
+                              "Create Account",
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 35),
+                          _buildTextField(
+                            controller: _nameController,
+                            label: 'Full Name',
+                            icon: Icons.person_rounded,
+                            isPassword: false,
+                          ),
+                          SizedBox(height: 20),
+                          _buildTextField(
+                            controller: _emailController,
+                            label: 'Email',
+                            icon: Icons.email_rounded,
+                            isPassword: false,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          SizedBox(height: 20),
+                          _buildTextField(
+                            controller: _phoneController,
+                            label: 'Phone Number',
+                            icon: Icons.phone_rounded,
+                            isPassword: false,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          SizedBox(height: 20),
+                          _buildTextField(
+                            controller: _passwordController,
+                            label: 'Password',
+                            icon: Icons.lock_rounded,
+                            isPassword: true,
+                          ),
+                          SizedBox(height: 32),
+                          _buildGradientButton(
+                            onPressed: _signUp,
+                            text: "Sign Up",
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(0xFF3EAAA5),
+                                Color.fromARGB(255, 142, 230, 233),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Expanded(child: Divider(color: Colors.grey.shade300)),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  "OR",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Expanded(child: Divider(color: Colors.grey.shade300)),
+                            ],
+                          ),
+                          SizedBox(height: 24),
+                          _buildGradientButton(
+                            onPressed: _signUpWithGoogle,
+                            text: "Continue with Google",
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color.fromARGB(255, 226, 111, 109),
+                                Colors.red.shade700,
+                              ],
+                            ),
+                            icon: FontAwesomeIcons.google,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Already have an account? ",
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, AppRoutes.login),
+                          child: Text(
+                            'Log in here',
+                            style: TextStyle(
+                              color: Color(0xFFBC4755),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              // decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool isPassword,
+    TextInputType? keyboardType,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            spreadRadius: 0,
+          ),
         ],
       ),
-    ),
-  ),
-);
-}
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword ? _obscureText : false,
+        keyboardType: keyboardType,
+        style: TextStyle(fontSize: 16),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 15,
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: Color(0xFFBC4778),
+            size: 22,
+          ),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _obscureText ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                    color: Color(0xFFBC4787),
+                    size: 22,
+                  ),
+                  onPressed: () => setState(() => _obscureText = !_obscureText),
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade50,
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradientButton({
+    required VoidCallback onPressed,
+    required String text,
+    required Gradient gradient,
+    IconData? icon,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            spreadRadius: 0,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _isLoading ? null : onPressed,
+          child: Center(
+            child: _isLoading
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (icon != null) ...[
+                        FaIcon(icon, color: Colors.white, size: 18),
+                        SizedBox(width: 12),
+                      ],
+                      Text(
+                        text,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
 }

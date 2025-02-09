@@ -109,26 +109,39 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     child: ScaleTransition(
                       scale: _logoAnimation,
                       child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
-                            ),
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF3EAAA5),
+                            Color(0xFFBC4781),
                           ],
                         ),
-                        child: CircleAvatar(
-                          radius: 100,
-                          backgroundColor: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 25,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                        child: ClipOval(
                           child: Image.asset(
-                            'assets/logo.jpg', 
-                            height: 150,
-                            width: 150,
+                            'assets/logo.jpg',
+                            height: 200,
+                            width: 200,
+                            fit: BoxFit.fitHeight,
                           ),
                         ),
                       ),
+                    ),
                     ),
                   ),
                   SizedBox(height: 40),
