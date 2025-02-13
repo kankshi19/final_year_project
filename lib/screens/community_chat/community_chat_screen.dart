@@ -54,8 +54,6 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     _messagesSubscription?.cancel(); 
      _messagesSubscription =
     _firestore
-        .collection('users')
-        .doc(_currentUser?.uid)
         .collection('messages')
         .orderBy('timestamp', descending: true)
         .snapshots()
@@ -760,8 +758,6 @@ class _CommunityChatScreenState extends State<CommunityChatScreen> {
     };
 
       await _firestore
-          .collection('users')
-          .doc(_currentUser?.uid)
           .collection('messages')
           .add(messageData);
 

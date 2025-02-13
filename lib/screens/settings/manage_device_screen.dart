@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'dart:convert';
 
 class ManageWearableScreen extends StatefulWidget {
   @override
@@ -20,35 +21,35 @@ class _ManageWearableScreenState extends State<ManageWearableScreen> {
     super.initState();
   }
 
-  /// Scan and Connect to ESP32
+  /// Scan and Connect to Raspberry Pi
   void scanAndConnect() async {
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
+    FlutterBluePlus.startScan(timeout: Duration(seconds: 10)); // Increased scan timeout
 
     FlutterBluePlus.scanResults.listen((results) async {
-
       for (ScanResult result in results) {
-            print("Device found: ${result.device.name} (${result.device.id})");
-            
-        if (result.device.name == "ESP32-Wearable") {
-          // Stop scanning and connect
-          FlutterBluePlus.stopScan();
+        print("Device found: ${result.device.name} (${result.device.id})");
+
+        if (result.device.name == "nirbhaya") { // Check for the Raspberry Pi device name
+          print("Found Raspberry Pi with name 'nirbhaya'");
+
+          FlutterBluePlus.stopScan(); // Stop scanning once device is found
           await result.device.connect();
           connectedDevice = result.device;
           isConnected = true;
+          print("Connected to Raspberry Pi.");
 
           // Discover services and characteristics
           List<BluetoothService> services =
               await connectedDevice!.discoverServices();
           for (BluetoothService service in services) {
-            for (BluetoothCharacteristic characteristic
-                in service.characteristics) {
+            for (BluetoothCharacteristic characteristic in service.characteristics) {
               if (characteristic.properties.write) {
                 writeCharacteristic = characteristic;
               }
               if (characteristic.properties.notify) {
                 characteristic.value.listen((value) {
                   setState(() {
-                    receivedData = String.fromCharCodes(value);
+                    receivedData = utf8.decode(value);
                   });
                 });
                 await characteristic.setNotifyValue(true);
@@ -62,38 +63,44 @@ class _ManageWearableScreenState extends State<ManageWearableScreen> {
     });
   }
 
-  /// Send Data to ESP32
-  void sendDataToESP32(String data) async {
+  /// Send Data to Raspberry Pi
+  void sendDataToRaspberryPi(String data) async {
     if (writeCharacteristic != null) {
-      await writeCharacteristic!.write(data.codeUnits);
+      await writeCharacteristic!.write(utf8.encode(data));
+      print("Sent: $data");
+    } else {
+      print("No write characteristic available.");
     }
   }
 
-  /// Sync Firebase Data with ESP32
+  /// Sync Firebase Data with Raspberry Pi
   void syncFirebaseData() async {
-    DatabaseReference ref = _database.ref("your/firebase/path");
-    DataSnapshot snapshot = await ref.get();
-    if (snapshot.exists) {
-      sendDataToESP32(snapshot.value.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Firebase data synced with wearable!")),
-      );
-    }
+    DatabaseReference ref = _database.ref("users/location");
+
+    ref.onValue.listen((DatabaseEvent event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>;
+      double latitude = data['latitude'];
+      double longitude = data['longitude'];
+      print("📡 Firebase Updated Location: $latitude, $longitude");
+
+      // Send updated location to Raspberry Pi
+      sendDataToRaspberryPi("LAT:$latitude,LON:$longitude");
+    });
   }
 
   /// Test SOS Feature
   void testSOS() {
-    sendDataToESP32("TEST_SOS");
+    sendDataToRaspberryPi("TEST_SOS");
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("SOS test command sent to wearable.")),
+      SnackBar(content: Text("SOS test command sent to Raspberry Pi.")),
     );
   }
 
   /// Test GPS Functionality
   void testGPS() {
-    sendDataToESP32("TEST_GPS");
+    sendDataToRaspberryPi("TEST_GPS");
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("GPS test command sent to wearable.")),
+      SnackBar(content: Text("GPS test command sent to Raspberry Pi.")),
     );
   }
 
@@ -115,7 +122,7 @@ class _ManageWearableScreenState extends State<ManageWearableScreen> {
             SizedBox(height: 10),
             Text(
               isConnected
-                  ? "Connected to ESP32-Wearable"
+                  ? "Connected to Raspberry Pi"
                   : "Not Connected. Please scan and connect.",
               style: TextStyle(fontSize: 16),
             ),

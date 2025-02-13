@@ -4,6 +4,8 @@ import 'package:safety_app/screens/initial(User)/user_type_selection_screen.dart
 import 'package:safety_app/screens/initial(user)/login_screen.dart';
 import 'dart:async';
 
+import 'user_type_selection_screen.dart';
+
 class OnboardingScreen extends StatefulWidget {
   @override
   _OnboardingScreenState createState() => _OnboardingScreenState();
