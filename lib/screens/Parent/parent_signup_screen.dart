@@ -73,7 +73,7 @@ class _ParentSignupScreenState extends State<ParentSignupScreen> {
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ParentHomeScreen()),
+            MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '',)),
           );
         }
       }
@@ -114,7 +114,7 @@ class _ParentSignupScreenState extends State<ParentSignupScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ParentHomeScreen()),
+          MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '',)),
         );
       }
     } catch (e) {

@@ -3,6 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ChildChatScreen extends StatefulWidget {
+  final String childId; // Pass the childId as a parameter
+
+  ChildChatScreen({required this.childId});
+
   @override
   _ChildChatScreenState createState() => _ChildChatScreenState();
 }
@@ -10,48 +14,37 @@ class ChildChatScreen extends StatefulWidget {
 class _ChildChatScreenState extends State<ChildChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  String? linkedUserId;
   String? chatId;
 
   @override
   void initState() {
     super.initState();
-    _fetchLinkedUser();
+    _createChatId();
   }
 
-  Future<void> _fetchLinkedUser() async {
+  // Create chat ID based on parent and child IDs
+  void _createChatId() {
     String currentUserId = _auth.currentUser!.uid;
+    String childId = widget.childId;
 
-    var linkSnapshot = await FirebaseFirestore.instance
-        .collection('parent_child_links')
-        .where(Filter.or(
-          Filter("parentId", isEqualTo: currentUserId),
-          Filter("childId", isEqualTo: currentUserId),
-        ))
-        .limit(1)
-        .get();
-
-    if (linkSnapshot.docs.isNotEmpty) {
-      var linkData = linkSnapshot.docs.first.data();
-      String otherUserId =
-          linkData['parentId'] == currentUserId ? linkData['childId'] : linkData['parentId'];
-
-      setState(() {
-        linkedUserId = otherUserId;
-        chatId = currentUserId.hashCode < linkedUserId.hashCode
-            ? '${currentUserId}_${linkedUserId}'
-            : '${linkedUserId}_${currentUserId}';
-      });
-    }
+    // Create a chat ID that ensures the same chat ID for both directions (parent <-> child)
+    chatId = currentUserId.hashCode < childId.hashCode
+        ? '${currentUserId}_${widget.childId}'
+        : '${widget.childId}_${currentUserId}';
   }
 
+  // Send a message to Firestore
   void _sendMessage() async {
-    if (_messageController.text.isEmpty || linkedUserId == null || chatId == null) return;
+    if (_messageController.text.isEmpty || chatId == null) return;
 
     String currentUserId = _auth.currentUser!.uid;
 
-    await FirebaseFirestore.instance.collection('chats').doc(chatId)
-        .collection('messages').add({
+    // Add the message to Firestore
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .add({
       'sender': currentUserId,
       'text': _messageController.text,
       'timestamp': FieldValue.serverTimestamp(),
@@ -62,7 +55,7 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (linkedUserId == null) {
+    if (chatId == null) {
       return Scaffold(
         appBar: AppBar(title: Text('Chat')),
         body: Center(child: CircularProgressIndicator()),
@@ -70,7 +63,7 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Chat')),
+      appBar: AppBar(title: Text('Chat with Child')),
       body: Column(
         children: [
           Expanded(
@@ -116,6 +109,7 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
             ),
           ),
 
+          // Message input and send button
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(

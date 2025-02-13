@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:safety_app/screens/initial(User)/user_type_selection_screen.dart';
 import 'package:safety_app/screens/initial(user)/login_screen.dart';
 import 'dart:async';
 
@@ -329,7 +330,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
               TextButton(
                 onPressed: () => Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
                 ),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
@@ -353,7 +354,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                   if (_currentPage == _onboardingData.length - 1) {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
                     );
                   } else {
                     _pageController.nextPage(

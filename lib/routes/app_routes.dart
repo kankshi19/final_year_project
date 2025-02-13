@@ -22,6 +22,7 @@ import '../screens/Parent/setup_parent.dart';
 import '../screens/Parent/link_child_screen.dart';
 import '../screens/Parent/child_chat_screen.dart';
 import '../screens/home/parent_chat_screen.dart';
+import '../screens/Parent/parent_profile.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -48,9 +49,8 @@ class AppRoutes {
   static const String linkChild = '/linkChild-screen';
   static const String childChat = '/childChat-screen';
   static const String parentChat = '/parentChat-screen';
-
-
-
+  static const String parentProfile = '/parent-profile';
+  
 
 
   static Map<String, WidgetBuilder> get routes {
@@ -72,12 +72,13 @@ class AppRoutes {
       selection: (context) => UserTypeSelectionScreen(),
       parentSignup: (context) => ParentSignupScreen(),
       parentLogin: (context) => ParentLoginScreen(),
-      parentHome: (context) => ParentHomeScreen(),
+      parentHome: (context) => ParentHomeScreen(childId: '',),
       setupUser: (context) => CompleteSetupPage(),
       setupParent: (context) => SetupParentPage(),
       linkChild: (context) => LinkChildScreen(),
-      childChat: (context) => ChildChatScreen(),
-      parentChat: (context) => ParentChatScreen()
+      childChat: (context) => ChildChatScreen(childId: 'childId'),
+      parentChat: (context) => ParentChatScreen(),
+      parentProfile: (context) => ParentProfileScreen()
     };
   }
 }

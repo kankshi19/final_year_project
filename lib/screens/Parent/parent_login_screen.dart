@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:safety_app/screens/Parent/link_child_screen.dart';
 import 'package:safety_app/screens/Parent/parent_home_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:safety_app/screens/home/home_screen.dart';
@@ -75,7 +76,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
               .showSnackBar(SnackBar(content: Text("Parent signed in successfully!")));
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ParentHomeScreen()),
+            MaterialPageRoute(builder: (context) => LinkChildScreen()),
           );
         }
       }
@@ -118,7 +119,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ParentHomeScreen()),
+            MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '',)),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Incorrect password")));
