@@ -1,106 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'child_chat_screen.dart'; // Import the Chat Screen
+import 'child_chat_screen.dart';
+import 'parent_profile.dart'; // Import the Parent Profile Screen
 
 class ParentHomeScreen extends StatefulWidget {
+  final String childId;
+
+  ParentHomeScreen({Key? key, required this.childId}) : super(key: key);
+
   @override
   _ParentHomeScreenState createState() => _ParentHomeScreenState();
 }
 
 class _ParentHomeScreenState extends State<ParentHomeScreen> {
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
-  String? childUserId;
-  late MapController _mapController;
   LatLng? _childLocation;
-  LatLng _defaultCenter = LatLng(20.5937, 78.9629); // Center of India
-  List<Marker> _markers = [];
+  late MapController _mapController;
   DateTime? lastUpdated;
+  bool _isLoading = true; // Loader flag
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
-    _fetchLinkedChild();
+    _listenToChildLocation(widget.childId);
   }
 
-  Future<void> _fetchLinkedChild() async {
-    try {
-      String parentId = FirebaseAuth.instance.currentUser!.uid;
-      print("Parent ID: $parentId");
-
-      // ✅ Fetch from Firestore
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('parent_child_links')
-          .where('parentId', isEqualTo: parentId)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        String linkedChildId = querySnapshot.docs.first['childId'];
-        print("Found linked child ID: $linkedChildId");
-
-        setState(() {
-          childUserId = linkedChildId;
-        });
-
-        _listenToChildLocation(linkedChildId);
-      } else {
-        print("No linked child found!");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No linked child found. Please link a child first.")),
-        );
-      }
-    } catch (e) {
-      print("Error getting linked child: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: Unable to fetch linked child.")),
-      );
-    }
-  }
-
+  // Listen for child location updates in Firebase
   void _listenToChildLocation(String childId) {
-    print("Listening for child's location updates: $childId");
-
     _dbRef.child("users").child(childId).child("location").onValue.listen((event) {
       if (event.snapshot.exists) {
         var data = event.snapshot.value as Map<dynamic, dynamic>?;
 
         if (data != null && data.containsKey("latitude") && data.containsKey("longitude")) {
-          double lat = double.parse(data["latitude"].toString());
-          double lng = double.parse(data["longitude"].toString());
-
-          print("Child location: $lat, $lng");
-
-          setState(() {
-            _childLocation = LatLng(lat, lng);
-            lastUpdated = DateTime.fromMillisecondsSinceEpoch(
-              int.parse(data["timestamp"].toString())
+          try {
+            double lat = double.parse(data["latitude"].toString());
+            double lng = double.parse(data["longitude"].toString());
+            DateTime updatedTime = DateTime.fromMillisecondsSinceEpoch(
+              int.tryParse(data["timestamp"].toString()) ?? DateTime.now().millisecondsSinceEpoch,
             );
-            _markers = [
-              Marker(
-                point: _childLocation!,
-                width: 40.0,
-                height: 40.0,
-                child: Icon(Icons.location_pin, color: Colors.red, size: 40),
-              ),
-            ];
-          });
 
-          // Move the map to the child's location
-          _mapController.move(_childLocation!, 15.0);
+            if (_childLocation == null || _childLocation!.latitude != lat || _childLocation!.longitude != lng) {
+              setState(() {
+                _childLocation = LatLng(lat, lng);
+                lastUpdated = updatedTime;
+                _isLoading = false; // Hide loader
+              });
+
+              _mapController.move(_childLocation!, 15.0); // Move map to new location
+            }
+          } catch (e) {
+            print("Error parsing location: $e");
+          }
         }
-      } else {
-        print("No location data available.");
       }
-    }, onError: (error) {
-      print("Error fetching location: $error");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error fetching location updates"))
-      );
     });
+  }
+
+  // Navigate to Parent Profile Screen
+  void _openParentProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ParentProfileScreen()),
+    );
+  }
+
+  // Navigate to chat screen with the selected child
+  void _openChatWithChild() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChildChatScreen(childId: widget.childId),
+      ),
+    );
   }
 
   @override
@@ -110,67 +84,60 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
         title: Text("Child's Location"),
         actions: [
           IconButton(
-            icon: Icon(Icons.chat), // ✅ Chat icon added
-            onPressed: () {
-              if (childUserId != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ChildChatScreen()),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("No linked child to chat with.")),
-                );
-              }
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              if (childUserId != null) {
-                _listenToChildLocation(childUserId!);
-              } else {
-                _fetchLinkedChild();
-              }
-            },
+            icon: Icon(Icons.person), // Profile Icon
+            onPressed: _openParentProfile,
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _childLocation ?? _defaultCenter,
-                initialZoom: 15.0,
-                minZoom: 3.0,
-                maxZoom: 18.0,
-              ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator()) // Show loader until data is available
+          : Column(
               children: [
-                TileLayer(urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"),
-                MarkerLayer(markers: _markers),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _childLocation != null 
-                    ? "Location: ${_childLocation!.latitude}, ${_childLocation!.longitude}"
-                    : "Waiting for location updates...",
+                // Display map with child's location
+                if (_childLocation != null)
+                  Expanded(
+                    child: FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: _childLocation!,
+                        initialZoom: 15.0,
+                      ),
+                      children: [
+                        TileLayer(urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: _childLocation!,
+                              width: 40.0,
+                              height: 40.0,
+                              child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Center(child: Text("No location data available")),
+
+                // Display last updated time
+                if (lastUpdated != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Last Updated: ${lastUpdated!.toLocal()}'),
+                  ),
+
+                // Chat button to communicate with the child
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.chat),
+                    label: Text('Chat with Child'),
+                    onPressed: _openChatWithChild,
+                  ),
                 ),
-                SizedBox(height: 4),
-                Text("Last Updated: ${lastUpdated ?? "Not available"}"),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -5,10 +5,12 @@ import 'package:safety_app/routes/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'theme/theme_provider.dart';
+import 'services/background_service.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await BackgroundService.initializeService(); // Start background location service
   await Firebase.initializeApp();
   
   // Get the saved theme preference
@@ -17,6 +19,8 @@ void main() async {
   
   // Check if it's the first time the app is launched
   final bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
+
+
 
   runApp(
     ChangeNotifierProvider(
