@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
 import 'package:flutter_native_contact_picker/model/contact.dart';
@@ -17,6 +20,7 @@ class EmergencyScreen extends StatefulWidget {
 }
 
 class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProviderStateMixin {
+
   List<Contact?> emergencyContacts = [];
   List<Map<String, dynamic>> nearbyPlaces = [];
   LocationData? _currentLocation;
@@ -24,6 +28,78 @@ class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProv
   final String googleMapsApiKey = 'AIzaSyBNshGF10FPBnYO4oaYTnN2Lxuu580rxd8';
   late AnimationController _sosAnimationController;
   bool _isLoading = true;
+
+  int _countdown = 10;
+  Timer? _timer;
+
+  void _startCountdown(BuildContext context) {
+    _countdown = 10;
+
+    // Start the countdown timer
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_countdown > 0) {
+        setState(() {
+          _countdown--;
+        });
+      } else {
+        _triggerSOS();
+        timer.cancel();
+      }
+    });
+
+    // Show the confirmation dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevents dismissing by tapping outside
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Emergency SOS!"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Sending emergency SOS in $_countdown seconds..."),
+                  SizedBox(height: 10),
+                  CircularProgressIndicator(),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _timer?.cancel();
+                    Navigator.pop(context); // Close dialog
+                  },
+                  child: Text("I'm OK, Cancel SOS"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _triggerSOS() {
+    Navigator.pop(context); // Close the dialog
+    sendSOS();
+  }
+
+  void sendSOS() {
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      DatabaseReference ref = FirebaseDatabase.instance.ref("sos_trigger/$userId");
+      ref.set({
+        "triggered": true,
+        "timestamp": DateTime.now().millisecondsSinceEpoch,
+      }).then((_) {
+        print("✅ SOS Triggered!");
+      }).catchError((error) {
+        print("❌ Failed to trigger SOS: $error");
+      });
+    }
+  }
+
 
   @override
   void initState() {
@@ -166,49 +242,9 @@ Future<void> _makeCall(String phoneNumber) async {
     throw 'Phone call permission denied';
   }
 }
-
-
-  // Send an SOS message
- void _sendSOS() async {
-  if (_currentLocation == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Unable to fetch current location')),
-    );
-    return;
-  }
-
-  final double latitude = _currentLocation!.latitude!;
-  final double longitude = _currentLocation!.longitude!;
-  final String locationUrl = 'https://www.google.com/maps?q=$latitude,$longitude';
-  final String message = 'Emergency! I need help. My location: $locationUrl';
-
-  // Check if there are emergency contacts selected
-  if (emergencyContacts.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('No emergency contacts selected')),
-    );
-    return;
-  }
-
-  try {
-    // Send SMS to each emergency contact using flutter_sms
-    // String result = await sendSMS(
-    //   message: message,
-    //   recipients: emergencyContacts.map((contact) => contact?.phoneNumbers?.first ?? '').toList(),
-    //   sendDirect: true, // Sends directly without opening the SMS app
-    // );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('SOS message sent to emergency contacts')),
-    );
-
-     // Optional: Check the result or log for success/failure
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to send SOS message')),
-    );
-    debugPrint('Error sending SMS: $e');
-  }
+String? getCurrentUserId() {
+  User? user = FirebaseAuth.instance.currentUser;
+  return user?.uid; // Returns UID if user is logged in
 }
 
 
@@ -283,7 +319,7 @@ Future<void> _makeCall(String phoneNumber) async {
       animation: _sosAnimationController,
       builder: (context, child) {
         return GestureDetector(
-          onTap: _sendSOS,
+          onDoubleTap: () => _startCountdown(context),
           child: Container(
             height: 120,
             width: double.infinity,

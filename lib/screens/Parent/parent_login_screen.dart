@@ -306,7 +306,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> with SingleTicker
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
+                          onTap: () => Navigator.pushNamed(context, AppRoutes.parentSignup),
                           child: Text(
                             'Sign up here',
                             style: TextStyle(

@@ -60,8 +60,8 @@ class _MapScreenState extends State<MapScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         int totalPlaces = data["results"].length;
-        print("tp: $totalPlaces");
-        return totalPlaces > 5 ? 1 : 0; // 0 = Nearby, 1 = Far
+        print("total places: $totalPlaces");
+        return totalPlaces > 5 ? 0 : 1; // 0 = Nearby, 1 = Far
       }
     } catch (e) {
       print("Error fetching neighborhood data: $e");
@@ -70,14 +70,14 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _fetchSafetyData(double lat, double lon) async {
-    final Uri url = Uri.parse("https://vidhi91-miracle-space.hf.space/predict");
+    final Uri url = Uri.parse("https://vidhi91-virtual-space.hf.space/predict");
 
     int neighborhood = await _fetchNeighborhood(lat, lon);
-    int crimeTime = DateTime.now().hour >= 18 ? 2 : 1;
+    print(neighborhood);
+    int crimeTime = DateTime.now().hour >= 18 ? 1 : 0;
     print(crimeTime);
 
     Map<String, dynamic> requestBody = {
-      "crime_rate": await _fetchCrimeRate(lat, lon),
       "crime_time": crimeTime,
       "crowd_density": await _fetchCrowdDensity(lat, lon),
       "weather_condition_encoded": await _fetchWeather(lat, lon),
@@ -96,8 +96,7 @@ class _MapScreenState extends State<MapScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         setState(() {
-          _zone = data["zone"] ?? "Unknown Zone";
-          _safety_score = data["safety_score"].toString() ?? "Unknown Safety";
+          _safety_score = data["crime_rate_prediction"].toString() ?? "Unknown Safety";
           _zoneMarkers = _createZoneMarkers(lat, lon, _zone);
         });
       } else {
@@ -114,51 +113,64 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  Future<double> _fetchCrimeRate(double lat, double lon) async {
-    // Placeholder for fetching actual crime rate from an API or database
-    return 2;
-  }
+  // Future<double> _fetchCrimeRate(double lat, double lon) async {
+  //   // Placeholder for fetching actual crime rate from an API or database
+  //   return 2;
+  // }
 
   Future<int> _fetchCrowdDensity(double lat, double lon) async {
-    final String url =
-        "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        "?location=$lat,$lon"
-        "&radius=1000" // Search within 500m
-        "&type=point_of_interest" // Consider specific place types if needed
-        "&key=$gmaps_apiKey";
+  final String url =
+      "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+      "?location=$lat,$lon"
+      "&radius=1000" // Search within 1km
+      "&type=point_of_interest" // Consider specific place types if needed
+      "&key=$gmaps_apiKey";
 
-    try {
-      final response = await http.get(Uri.parse(url));
+  try {
+    final response = await http.get(Uri.parse(url));
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<dynamic> places = data['results'];
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List<dynamic> places = data['results'];
 
-        int crowdScore = 0;
-        for (var place in places) {
-          if (place.containsKey('user_ratings_total')) {
-            crowdScore += place['user_ratings_total'] as int;
-          }
-        }
-
-        // Normalize by number of places to avoid large values
-        int densityEstimate = (places.length * 50) + (crowdScore ~/ (places.length + 1));
-        print('Crowd density estimate: $densityEstimate');
-        return densityEstimate;
-        
-      } else {
-        throw Exception("Failed to fetch crowd data");
+      if (places.isEmpty) {
+        return 1; // Minimum density when no places are found
       }
-    } catch (e) {
-      print("Error fetching crowd density: $e");
-      return -1; // Return a default or error value
+
+      int crowdScore = 0;
+      for (var place in places) {
+        if (place.containsKey('user_ratings_total')) {
+          crowdScore += place['user_ratings_total'] as int;
+        }
+      }
+
+      // Normalize by number of places to avoid large values
+      int rawDensity = (places.length * 50) + (crowdScore ~/ (places.length + 1));
+
+      // Define expected density range (adjustable based on testing)
+      const int minDensity = 0;   // Minimum observed density
+      const int maxDensity = 500; // Adjust based on real-world data
+
+      // Normalize to range of 1-100
+      int normalizedDensity = ((rawDensity - minDensity) * (100 - 1) ~/ (maxDensity - minDensity)).clamp(1, 100);
+
+      print('Crowd density estimate (1-100): $normalizedDensity');
+      return normalizedDensity;
+
+    } else {
+      throw Exception("Failed to fetch crowd data");
     }
+  } catch (e) {
+    print("Error fetching crowd density: $e");
+    return 1; // Return minimum value on error
   }
+}
 
   Future<int> _fetchWeather(double lat, double lon) async {
     final String weather_ApiKey = weatherApiKey;
     final String baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
     final Uri url = Uri.parse('$baseUrl?lat=$lat&lon=$lon&appid=$weather_ApiKey');
+    print(url);
 
     try {
       final response = await http.get(url);
@@ -168,14 +180,10 @@ class _MapScreenState extends State<MapScreen> {
         print(weatherMain);
 
         int weatherConditionEncoded;
-        if (weatherMain == 'Clear' || weatherMain == 'Smoke') {
+        if (weatherMain == 'Clear') {
           weatherConditionEncoded = 0;
-        } else if (weatherMain == 'Haze'||weatherMain == 'Clouds') {
-          weatherConditionEncoded = 1;
-        } else if (weatherMain == 'Rain') {
-          weatherConditionEncoded = 2;
-        } else {
-          weatherConditionEncoded = 0; 
+        }else {
+          weatherConditionEncoded = 1; 
         }
         print('Weather condition encoded: $weatherConditionEncoded');
         return weatherConditionEncoded;
