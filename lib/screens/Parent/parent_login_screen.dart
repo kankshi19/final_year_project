@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safety_app/screens/Parent/link_child_screen.dart';
 import 'package:safety_app/screens/Parent/parent_home_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:safety_app/screens/home/home_screen.dart';
 
 
 import '../../routes/app_routes.dart';

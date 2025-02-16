@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
+import 'package:safety_app/services/notification_service.dart';
 import 'package:safety_app/utils/constants.dart';
 
 class MapScreen extends StatefulWidget {
@@ -69,49 +70,64 @@ class _MapScreenState extends State<MapScreen> {
     return 0;
   }
 
-  Future<void> _fetchSafetyData(double lat, double lon) async {
-    final Uri url = Uri.parse("https://vidhi91-virtual-space.hf.space/predict");
+Future<void> _fetchSafetyData(double lat, double lon) async {
+  final Uri url = Uri.parse("https://vidhi91-virtual-space.hf.space/predict");
 
-    int neighborhood = await _fetchNeighborhood(lat, lon);
-    print(neighborhood);
-    int crimeTime = DateTime.now().hour >= 18 ? 1 : 0;
-    print(crimeTime);
+  int neighborhood = await _fetchNeighborhood(lat, lon);
+  int crimeTime = DateTime.now().hour >= 18 ? 1 : 0;
 
-    Map<String, dynamic> requestBody = {
-      "crime_time": crimeTime,
-      "crowd_density": await _fetchCrowdDensity(lat, lon),
-      "weather_condition_encoded": await _fetchWeather(lat, lon),
-      "neighborhood": neighborhood,
-      "longitude": lon,
-      "latitude": lat,
-    };
+  Map<String, dynamic> requestBody = {
+    "crime_time": crimeTime,
+    "crowd_density": await _fetchCrowdDensity(lat, lon),
+    "weather_condition": await _fetchWeather(lat, lon),
+    "neighborhood": neighborhood,
+    "longitude": lon,
+    "latitude": lat,
+  };
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: json.encode(requestBody),
-      );
+  try {
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: json.encode(requestBody),
+    );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        setState(() {
-          _safety_score = data["crime_rate_prediction"].toString() ?? "Unknown Safety";
-          _zoneMarkers = _createZoneMarkers(lat, lon, _zone);
-        });
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      // double crime_rate = data["crime_rate_prediction"] ?? 0.0;
+      double safetyScore = data["safety_score"] ?? 0.0;
+      
+      String zone;
+      if (safetyScore >= 7) {
+        zone = "Green (Safe)";
+      } else if (safetyScore >= 4) {
+        zone = "Yellow (Moderate Safety)";
       } else {
-        print("Failed to fetch safety data. Status code: ${response.statusCode}");
-        setState(() {
-          _zone = "Unable to fetch safety data.";
-        });
+        zone = "Red (Unsafe)";
       }
-    } catch (e) {
-      print("An error occurred while fetching safety data: $e");
+
+      NotificationService.showZoneAlert(zone: zone, safetyScore: safetyScore);
+
       setState(() {
-        _zone = "Error fetching safety data.";
+        _safety_score = safetyScore.toString();
+        _zone = zone;
+        _zoneMarkers = _createZoneMarkers(lat, lon, _zone);
+      });
+
+    } else {
+      print("Failed to fetch safety data. Status code: ${response.statusCode}");
+      setState(() {
+        _zone = "Unable to fetch safety data.";
       });
     }
+  } catch (e) {
+    print("An error occurred while fetching safety data: $e");
+    setState(() {
+      _zone = "Error fetching safety data.";
+    });
   }
+}
+
 
   // Future<double> _fetchCrimeRate(double lat, double lon) async {
   //   // Placeholder for fetching actual crime rate from an API or database
@@ -122,8 +138,8 @@ class _MapScreenState extends State<MapScreen> {
   final String url =
       "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
       "?location=$lat,$lon"
-      "&radius=1000" // Search within 1km
-      "&type=point_of_interest" // Consider specific place types if needed
+      "&radius=1000" 
+      "&type=point_of_interest" // General POIs, can be adjusted
       "&key=$gmaps_apiKey";
 
   try {
@@ -134,29 +150,27 @@ class _MapScreenState extends State<MapScreen> {
       final List<dynamic> places = data['results'];
 
       if (places.isEmpty) {
-        return 1; // Minimum density when no places are found
+        return 1; // No crowd if no places are found
       }
 
-      int crowdScore = 0;
+      int totalUserRatings = 0;
+      int totalPlaces = places.length;
+
       for (var place in places) {
         if (place.containsKey('user_ratings_total')) {
-          crowdScore += place['user_ratings_total'] as int;
+          totalUserRatings += place['user_ratings_total'] as int;
         }
       }
 
-      // Normalize by number of places to avoid large values
-      int rawDensity = (places.length * 50) + (crowdScore ~/ (places.length + 1));
+      // Define a dynamic max crowd score based on past observations (Adjust this based on real-world data)
+      const int estimatedMaxCrowd = 2500; // Assume 1000+ people in a 500m circle is extreme
+      int rawDensity = totalUserRatings ~/ (totalPlaces + 1); // Avoid division by zero
 
-      // Define expected density range (adjustable based on testing)
-      const int minDensity = 0;   // Minimum observed density
-      const int maxDensity = 500; // Adjust based on real-world data
+      // Normalize to a scale of 1-100% (how full the area is)
+      int normalizedDensity = ((rawDensity * 100) ~/ estimatedMaxCrowd).clamp(1, 100);
 
-      // Normalize to range of 1-100
-      int normalizedDensity = ((rawDensity - minDensity) * (100 - 1) ~/ (maxDensity - minDensity)).clamp(1, 100);
-
-      print('Crowd density estimate (1-100): $normalizedDensity');
+      print('Crowd density estimate (1-100%): $normalizedDensity');
       return normalizedDensity;
-
     } else {
       throw Exception("Failed to fetch crowd data");
     }
@@ -481,8 +495,8 @@ class _MapScreenState extends State<MapScreen> {
   Color _getSafetyScoreColor(String score) {
     try {
       double numericScore = double.parse(score);
-      if (numericScore >= 7.5) return Colors.green;
-      if (numericScore >= 5) return Colors.orange;
+      if (numericScore >= 7) return Colors.green;
+      if (numericScore >= 4) return Colors.orange;
       return Colors.red;
     } catch (e) {
       return Colors.grey; // For non-numeric or error cases
