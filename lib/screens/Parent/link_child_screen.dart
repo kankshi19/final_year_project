@@ -230,7 +230,8 @@ class _LinkChildScreenState extends State<LinkChildScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => ParentHomeScreen(
-                                          childId: _linkedChildren[index]['childId']),
+                                          childId: _linkedChildren[index]['childId'],
+                                          childName: _linkedChildren[index]['childName']),
                                     ),
                                   );
                                 },

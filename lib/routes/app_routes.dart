@@ -23,6 +23,7 @@ import '../screens/Parent/link_child_screen.dart';
 import '../screens/Parent/child_chat_screen.dart';
 import '../screens/home/parent_chat_screen.dart';
 import '../screens/Parent/parent_profile.dart';
+import '../screens/video_call/videocall_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -50,6 +51,7 @@ class AppRoutes {
   static const String childChat = '/childChat-screen';
   static const String parentChat = '/parentChat-screen';
   static const String parentProfile = '/parent-profile';
+  static const String videoCall = '/video_call';
   
 
 
@@ -72,13 +74,14 @@ class AppRoutes {
       selection: (context) => UserTypeSelectionScreen(),
       parentSignup: (context) => ParentSignupScreen(),
       parentLogin: (context) => ParentLoginScreen(),
-      parentHome: (context) => ParentHomeScreen(childId: '',),
+      parentHome: (context) => ParentHomeScreen(childId: '',childName: '',),
       setupUser: (context) => CompleteSetupPage(),
       setupParent: (context) => SetupParentPage(),
       linkChild: (context) => LinkChildScreen(),
-      childChat: (context) => ChildChatScreen(childId: 'childId'),
+      childChat: (context) => ChildChatScreen(childId: 'childId',childName: 'childName',),
       parentChat: (context) => ParentChatScreen(),
-      parentProfile: (context) => ParentProfileScreen()
+      parentProfile: (context) => ParentProfileScreen(),
+      videoCall: (context) => VideoCallScreen(chatId: 'chatId', callId: '',),
     };
   }
 }

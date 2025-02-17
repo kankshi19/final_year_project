@@ -77,9 +77,12 @@ dependencies:
   video_player: ^2.9.2
   flutter_staggered_animations: ^1.1.0
   flutter_animate: ^4.2.0
-  flutter_background_service: ^5.1.0
+  flutter_background_service: ^5.0.5
   lottie: ^2.3.2
-
+  flutter_background_service_android: ^6.0.0
+  flutter_webrtc: ^0.12.9
+  geocoding: ^3.0.0
+  google_fonts: ^6.2.1
   
 dev_dependencies:
   flutter_test:

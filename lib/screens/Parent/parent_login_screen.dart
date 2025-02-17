@@ -5,15 +5,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:safety_app/screens/Parent/link_child_screen.dart';
 import 'package:safety_app/screens/Parent/parent_home_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:safety_app/screens/home/home_screen.dart';
 
 
 import '../../routes/app_routes.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
 
 class ParentLoginScreen extends StatefulWidget {
   @override
   _ParentLoginScreenState createState() => _ParentLoginScreenState();
 }
+
+
 
 class _ParentLoginScreenState extends State<ParentLoginScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
@@ -23,6 +25,11 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> with SingleTicker
   bool _isLoading = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  // Future<void> saveUserType(String userType) async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   await prefs.setString('user_type', userType);
+  // }
 
   @override
   void initState() {
@@ -135,7 +142,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> with SingleTicker
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '',)),
+            MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '', childName: '',)),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Incorrect password")));
@@ -307,7 +314,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> with SingleTicker
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, AppRoutes.signup),
+                          onTap: () => Navigator.pushNamed(context, AppRoutes.parentSignup),
                           child: Text(
                             'Sign up here',
                             style: TextStyle(

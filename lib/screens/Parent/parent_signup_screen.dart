@@ -89,7 +89,7 @@ class _ParentSignupScreenState extends State<ParentSignupScreen> with SingleTick
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '',)),
+            MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '', childName: '',)),
           );
         }
       }
@@ -130,7 +130,7 @@ class _ParentSignupScreenState extends State<ParentSignupScreen> with SingleTick
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '',)),
+          MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '', childName: '',)),
         );
       }
     } catch (e) {
@@ -316,7 +316,7 @@ class _ParentSignupScreenState extends State<ParentSignupScreen> with SingleTick
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, AppRoutes.login),
+                          onTap: () => Navigator.pushNamed(context, AppRoutes.parentLogin),
                           child: Text(
                             'Log in here',
                             style: TextStyle(

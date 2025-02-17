@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:safety_app/screens/video_call/videocall_screen.dart';
+
 
 class ParentChatScreen extends StatefulWidget {
   @override
@@ -17,6 +20,7 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
   void initState() {
     super.initState();
     _fetchLinkedUser();
+    _listenForIncomingCalls();
   }
 
   Future<void> _fetchLinkedUser() async {
@@ -50,14 +54,91 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
 
     String currentUserId = _auth.currentUser!.uid;
 
-    await FirebaseFirestore.instance.collection('chats').doc(chatId)
-        .collection('messages').add({
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .add({
       'sender': currentUserId,
       'text': _messageController.text,
       'timestamp': FieldValue.serverTimestamp(),
     });
 
     _messageController.clear();
+  }
+
+  void _listenForIncomingCalls() {
+    String currentUserId = _auth.currentUser!.uid;
+
+    FirebaseFirestore.instance
+        .collection('video_calls')
+        .where('receiverId', isEqualTo: currentUserId)
+        .where('status', isEqualTo: 'incoming')
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.docs.isNotEmpty) {
+        var callData = snapshot.docs.first.data();
+        _showIncomingCallDialog(callData['callerId'], snapshot.docs.first.id);
+      }
+    });
+  }
+
+  void _showIncomingCallDialog(String callerId, String callId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text("Incoming Video Call"),
+        content: Text("You have an incoming video call."),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _rejectCall(callId);
+            },
+            child: Text("Reject"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _acceptCall(callId);
+            },
+            child: Text("Accept"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _acceptCall(String callId) async {
+    await FirebaseFirestore.instance
+        .collection('video_calls')
+        .doc(callId)
+        .update({'status': 'accepted'});
+
+    if (mounted) {
+      Navigator.pushNamed(context, '/video_call', arguments: callId);
+    }
+  }
+
+  Future<void> _rejectCall(String callId) async {
+    await FirebaseFirestore.instance
+        .collection('video_calls')
+        .doc(callId)
+        .update({'status': 'rejected'});
+  }
+
+  void _initiateVideoCall() async {
+    if (linkedUserId == null || chatId == null) return;
+
+    String currentUserId = _auth.currentUser!.uid;
+
+    await FirebaseFirestore.instance.collection('video_calls').add({
+      'callerId': currentUserId,
+      'receiverId': linkedUserId,
+      'status': 'incoming',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   @override
@@ -70,7 +151,15 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Chat')),
+      appBar: AppBar(
+        title: Text('Parent Chat'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.video_call, color: Colors.green),
+            onPressed: _initiateVideoCall,
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -115,7 +204,6 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
               },
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(

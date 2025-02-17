@@ -1,11 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:intl/intl.dart';
+import 'package:safety_app/screens/video_call/videocall_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ChildChatScreen extends StatefulWidget {
-  final String childId; // Pass the childId as a parameter
+  final String childId;
+  final String childName;
 
-  ChildChatScreen({required this.childId});
+  ChildChatScreen({required this.childId, required this.childName});
 
   @override
   _ChildChatScreenState createState() => _ChildChatScreenState();
@@ -14,7 +19,14 @@ class ChildChatScreen extends StatefulWidget {
 class _ChildChatScreenState extends State<ChildChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ScrollController _scrollController = ScrollController();
   String? chatId;
+
+  final Color primaryColor = Color(0xFF3EAAA5); // Teal
+  final Color secondaryColor = Color(0xFFBC4781); // Pink
+  final Color backgroundColor = Color(0xFFF5F7FB); // Light blue-grey
+  final Color messageBubbleColor = Color(0xFF3EAAA5); // Teal
+  final Color otherMessageBubbleColor = Color(0xFFE8ECF3); // Light grey
 
   @override
   void initState() {
@@ -22,24 +34,19 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
     _createChatId();
   }
 
-  // Create chat ID based on parent and child IDs
   void _createChatId() {
     String currentUserId = _auth.currentUser!.uid;
     String childId = widget.childId;
-
-    // Create a chat ID that ensures the same chat ID for both directions (parent <-> child)
     chatId = currentUserId.hashCode < childId.hashCode
         ? '${currentUserId}_${widget.childId}'
         : '${widget.childId}_${currentUserId}';
   }
 
-  // Send a message to Firestore
   void _sendMessage() async {
     if (_messageController.text.isEmpty || chatId == null) return;
 
     String currentUserId = _auth.currentUser!.uid;
 
-    // Add the message to Firestore
     await FirebaseFirestore.instance
         .collection('chats')
         .doc(chatId)
@@ -51,85 +58,315 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
     });
 
     _messageController.clear();
+    _scrollController.animateTo(
+      0.0,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
+
+  void _startVideoCall() async {
+    String currentUserId = _auth.currentUser!.uid;
+    await FirebaseFirestore.instance.collection('video_calls').doc(chatId).set({
+      'callerId': currentUserId,
+      'receiverId': widget.childId,
+      'status': 'calling',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChildVideoCallScreen(chatId: chatId!),
+      ),
+    );
+  }
+
+  // ... [Previous methods remain the same: _createChatId, _sendMessage, _startVideoCall]
 
   @override
   Widget build(BuildContext context) {
     if (chatId == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('Chat')),
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: primaryColor,
+          ),
+        ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Chat with Child')),
+      backgroundColor: backgroundColor,
+      appBar: _buildAppBar(),
       body: Column(
         children: [
+          _buildDateDivider(),
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('chats')
-                  .doc(chatId)
-                  .collection('messages')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(child: CircularProgressIndicator());
-                }
+            child: _buildMessageList(),
+          ),
+          _buildMessageInput(),
+        ],
+      ),
+    );
+  }
 
-                var messages = snapshot.data!.docs;
+  PreferredSize _buildAppBar() {
+    return PreferredSize(
+      preferredSize: Size.fromHeight(70.0),
+      child: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        toolbarHeight: 70.0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: primaryColor),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: primaryColor.withOpacity(0.2),
+              child: Text(
+                widget.childName[0].toUpperCase(),
+                style: GoogleFonts.inter(
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.childName.split(' ')[0],
+                  style: GoogleFonts.inter(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.video_call, color: primaryColor),
+            ),
+            onPressed: _startVideoCall,
+          ),
+          SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
 
-                return ListView.builder(
-                  reverse: true,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    var message = messages[index];
-                    bool isMe = message['sender'] == _auth.currentUser!.uid;
-
-                    return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isMe ? Colors.blueAccent : Colors.grey,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Text(
-                          message['text'],
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+  Widget _buildDateDivider() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: Colors.grey.withOpacity(0.3))),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Today',
+              style: GoogleFonts.inter(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
+          Expanded(child: Divider(color: Colors.grey.withOpacity(0.3))),
+        ],
+      ),
+    );
+  }
 
-          // Message input and send button
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter message...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+  Widget _buildMessageList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .orderBy('timestamp', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator(color: primaryColor));
+        }
+
+        var messages = snapshot.data!.docs;
+
+        return ListView.builder(
+          reverse: true,
+          controller: _scrollController,
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          itemCount: messages.length,
+          itemBuilder: (context, index) {
+            var message = messages[index];
+            bool isMe = message['sender'] == _auth.currentUser!.uid;
+
+            return MessageBubble(
+              message: message['text'],
+              isMe: isMe,
+              time: message['timestamp'] != null
+                  ? DateFormat('HH:mm').format(message['timestamp'].toDate())
+                  : '',
+              primaryColor: messageBubbleColor,
+              backgroundColor: otherMessageBubbleColor,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMessageInput() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            offset: Offset(0, -4),
+            blurRadius: 24,
+            color: Colors.black.withOpacity(0.08),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: InputDecoration(
+                        hintText: 'Type your message...',
+                        hintStyle: GoogleFonts.inter(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 20),
                       ),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.send, color: Colors.blueAccent),
-                  onPressed: _sendMessage,
+                  IconButton(
+                    icon: Icon(Icons.emoji_emotions_outlined, color: Colors.grey),
+                    onPressed: () {}, // Add emoji picker functionality
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(width: 12),
+          GestureDetector(
+            onTap: _sendMessage,
+            child: Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Icon(Icons.send, color: Colors.white, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+//✅ Updated Video Call Screen for Child
+class ChildVideoCallScreen extends StatelessWidget {
+  final String chatId;
+
+  const ChildVideoCallScreen({super.key, required this.chatId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Child Video Call")),
+      body: Center(child: Text("Video Call with $chatId")),
+    );
+  }
+}
+
+class MessageBubble extends StatelessWidget {
+  final String message;
+  final bool isMe;
+  final String time;
+  final Color primaryColor;
+  final Color backgroundColor;
+
+   MessageBubble({
+    required this.message,
+    required this.isMe,
+    required this.time,
+    required this.primaryColor,
+    required this.backgroundColor,
+  });
+
+
+   @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isMe ? primaryColor : backgroundColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(isMe ? 20 : 0),
+                bottomRight: Radius.circular(isMe ? 0 : 20),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  offset: Offset(0, 4),
+                  blurRadius: 16,
+                  color: Colors.black.withOpacity(0.04),
                 ),
               ],
+            ),
+            child: Text(
+              message,
+              style: GoogleFonts.inter(
+                color: isMe ? Colors.white : Colors.black87,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            time,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: Colors.grey,
             ),
           ),
         ],

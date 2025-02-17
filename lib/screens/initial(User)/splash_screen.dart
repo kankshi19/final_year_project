@@ -1,10 +1,11 @@
 import 'dart:math';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:safety_app/screens/initial(User)/login_screen.dart';
+import 'package:safety_app/screens/Parent/link_child_screen.dart';
+import 'package:safety_app/screens/Parent/parent_home_screen.dart';
+import 'package:safety_app/screens/initial(User)/user_type_selection_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:animate_do/animate_do.dart';
 import '../home/home_screen.dart';
 import 'onboarding_screen.dart';
 
@@ -61,16 +62,44 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       User? user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
+        await _navigateBasedOnUserType(user.uid);
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
+        );
+      }
+    }
+  }
+
+  Future<void> _navigateBasedOnUserType(String uid) async {
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (userDoc.exists) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen()),
         );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
-        );
+        return;
       }
+      final parentDoc = await FirebaseFirestore.instance.collection('parents').doc(uid).get();
+      if (parentDoc.exists) {
+      String childId = parentDoc.data()?['childId'] ?? '';
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LinkChildScreen()),
+      );
+      return;
+    }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
+      );
+    } catch (e) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
+      );
     }
   }
 
