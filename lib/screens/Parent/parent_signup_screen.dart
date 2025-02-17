@@ -89,7 +89,7 @@ class _ParentSignupScreenState extends State<ParentSignupScreen> with SingleTick
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '',)),
+            MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '', childName: '',)),
           );
         }
       }
@@ -130,7 +130,7 @@ class _ParentSignupScreenState extends State<ParentSignupScreen> with SingleTick
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '',)),
+          MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: '', childName: '',)),
         );
       }
     } catch (e) {

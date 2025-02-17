@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:safety_app/screens/Parent/link_child_screen.dart';
@@ -64,10 +65,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       if (user != null) {
         await _navigateBasedOnUserType(user.uid);
       } else {
+        await _navigateBasedOnUserType(user.uid);
+      } else {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
+          MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
         );
+      }
+    }
+  }
+
+  Future<void> _navigateBasedOnUserType(String uid) async {
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (userDoc.exists) {
       }
     }
   }

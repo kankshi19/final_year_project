@@ -11,6 +11,7 @@ class CompleteSetupPage extends StatefulWidget {
 class _CompleteSetupPageState extends State<CompleteSetupPage> {
   final TextEditingController _phoneController = TextEditingController();
   final User? _user = FirebaseAuth.instance.currentUser;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +20,7 @@ class _CompleteSetupPageState extends State<CompleteSetupPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "Please enter your phone number",
@@ -35,35 +37,67 @@ class _CompleteSetupPageState extends State<CompleteSetupPage> {
               keyboardType: TextInputType.phone,
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _savePhoneNumber,
-              child: Text("Save Phone Number"),
-            ),
+            _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _savePhoneNumber,
+                      child: Text("Save Phone Number"),
+                    ),
+                  ),
           ],
         ),
       ),
     );
   }
 
+  /// Function to Save User's Phone Number & Set Role as "User"
   Future<void> _savePhoneNumber() async {
     String phoneNumber = _phoneController.text.trim();
 
-    if (phoneNumber.isNotEmpty && phoneNumber.length == 10) {
-      try {
-        await FirebaseFirestore.instance.collection('users').doc(_user!.uid).update({
-          'phoneNumber': phoneNumber,
-        });
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
-      } catch (e) {
-        print("Error saving phone number: $e");
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save phone number.')));
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Enter a valid 10-digit phone number.")));
+    if (_user == null) {
+      _showSnackBar("User not logged in. Please sign in again.");
+      return;
     }
+
+    if (phoneNumber.isEmpty || phoneNumber.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(phoneNumber)) {
+      _showSnackBar("Enter a valid 10-digit phone number.");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Save user details in Firestore and set role as "user"
+      await FirebaseFirestore.instance.collection('users').doc(_user!.uid).set({
+        'phoneNumber': phoneNumber,
+        'role': 'user', // Ensuring this entry is marked as a user
+      }, SetOptions(merge: true));
+
+      _showSnackBar("Phone number saved successfully!");
+
+      // Navigate to HomeScreen after saving phone number
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } catch (e) {
+      print("Error saving phone number: $e");
+      _showSnackBar("Failed to save phone number. Try again.");
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// Function to Show SnackBar Message
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.blue,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }
