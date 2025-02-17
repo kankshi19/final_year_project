@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -81,14 +83,32 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Child's Location"),
+        title: Text(
+          "Child's Location",
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade800, Colors.blue.shade600],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.person), // Profile Icon
+            icon: Icon(Icons.person, color: Colors.white),
             onPressed: _openParentProfile,
           ),
         ],
       ),
+
       body: _isLoading
           ? Center(child: CircularProgressIndicator()) // Show loader until data is available
           : Column(
@@ -96,26 +116,35 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                 // Display map with child's location
                 if (_childLocation != null)
                   Expanded(
-                    child: FlutterMap(
-                      mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter: _childLocation!,
-                        initialZoom: 15.0,
-                      ),
-                      children: [
-                        TileLayer(urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: _childLocation!,
-                              width: 40.0,
-                              height: 40.0,
-                              child: Icon(Icons.location_pin, color: Colors.red, size: 40),
-                            ),
-                          ],
-                        ),
-                      ],
+                  child: FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: _childLocation!,
+                      initialZoom: 15.0,
                     ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                        userAgentPackageName: 'com.example.app',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _childLocation!,
+                            width: 50.0,
+                            height: 50.0,
+                            child: Icon(
+                              Icons.location_pin,
+                              color: Colors.red,
+                              size: 50,
+                            ).animate(onPlay: (controller) => controller.repeat())
+                             .shake(duration: 2000.ms, hz: 2),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ).animate().fadeIn(duration: 500.ms),
+
                   )
                 else
                   Center(child: Text("No location data available")),
@@ -129,13 +158,30 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
 
                 // Chat button to communicate with the child
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: ElevatedButton.icon(
-                    icon: Icon(Icons.chat),
-                    label: Text('Chat with Child'),
+                    icon: Icon(Icons.chat, color: Colors.white),
+                    label: Text(
+                      'Chat with Child',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade800,
+                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                      shadowColor: Colors.blue.shade800.withOpacity(0.3),
+                    ),
                     onPressed: _openChatWithChild,
-                  ),
+                  ).animate().scale(delay: 300.ms),
                 ),
+
               ],
             ),
     );

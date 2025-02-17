@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:safety_app/screens/Parent/link_child_screen.dart';
 import 'package:safety_app/screens/Parent/parent_home_screen.dart';
 import 'package:safety_app/screens/initial(User)/user_type_selection_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -86,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       String childId = parentDoc.data()?['childId'] ?? '';
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => ParentHomeScreen(childId: childId)),
+        MaterialPageRoute(builder: (context) => LinkChildScreen()),
       );
       return;
     }
