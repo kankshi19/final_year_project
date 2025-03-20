@@ -23,7 +23,7 @@ void main() async {
     );
   
   // Initialize services
-  await BackgroundService.initializeService();
+  //await BackgroundService.initializeService();
   await Firebase.initializeApp();
 
   // Get the saved preferences

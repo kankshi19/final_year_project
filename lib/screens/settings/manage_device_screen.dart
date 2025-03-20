@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'dart:convert';
+import 'package:safety_app/utils/constants.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:async';
+import '../../services/bleService.dart';
 
 class ManageWearableScreen extends StatefulWidget {
   @override
@@ -10,395 +10,574 @@ class ManageWearableScreen extends StatefulWidget {
 }
 
 class _ManageWearableScreenState extends State<ManageWearableScreen> {
-  final FirebaseDatabase _database = FirebaseDatabase.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  FlutterBluePlus flutterBlue = FlutterBluePlus();
-  BluetoothDevice? connectedDevice;
-  BluetoothCharacteristic? writeCharacteristic;
-  String receivedData = "";
+  // Use the BleService
+  final BleService _bleService = BleService();
+  
+  // State variables for UI
   bool isConnected = false;
   bool isScanning = false;
-  bool isSyncing = false;
-  String? userId;
-  String batteryLevel = "Unknown";
-  String lastSync = "Never";
-  List<String> deviceLogs = [];
+  String connectionStatus = "Disconnected";
+  String gpsData = "No GPS data received";
+  double? latitude;
+  double? longitude;
+  int batteryLevel = 0;
+
+  bool _isConnecting = false;
+  bool _isDisconnecting = false;
+  
+  // Stream subscriptions
+  late StreamSubscription<String> _connectionSubscription;
+  late StreamSubscription<Map<String, dynamic>> _gpsSubscription;
+  late StreamSubscription<int> _batterySubscription;
 
   @override
   void initState() {
     super.initState();
-    getUserId();
-    // Start periodic battery check if connected
-    _startPeriodicBatteryCheck();
-  }
+      isConnected = _bleService.isConnected;
+      connectionStatus = isConnected ? "Connected" : "Disconnected";
 
-  void _startPeriodicBatteryCheck() {
-    Future.delayed(Duration(minutes: 5), () {
-      if (isConnected) {
-        _checkBatteryLevel();
-        _startPeriodicBatteryCheck();
-      }
-    });
-  }
-
-  Future<void> _checkBatteryLevel() async {
-    if (writeCharacteristic != null) {
-      await writeCharacteristic!.write(utf8.encode("BAT:CHECK"));
-    }
-  }
-
-  void getUserId() {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      setState(() {
-        userId = user.uid;
-      });
-      _loadDeviceLogs();
-    }
-  }
-
-  void _loadDeviceLogs() {
-    if (userId == null) return;
-    _database.ref("users/$userId/device_logs").onValue.listen((event) {
-      if (event.snapshot.value != null) {
+      // Subscribe to BLE state updates
+      _connectionSubscription = _bleService.connectionStatusStream.listen((status) {
         setState(() {
-          List<dynamic> logs = (event.snapshot.value as List<dynamic>);
-          deviceLogs = logs.cast<String>();
+          connectionStatus = status;
+          isConnected = _bleService.isConnected;
         });
-      }
-    });
-  }
-
-void scanAndConnect() async {
-  setState(() {
-    isScanning = true;
-  });
-
-  FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
-
-  FlutterBluePlus.scanResults.listen((results) async {
-    for (ScanResult result in results) {
-      print("Found device: ${result.device.name} (${result.device.id})");
-
-      if (result.device.name.isNotEmpty && result.device.name.contains("nirbhaya")) {
-        print("Found Raspberry Pi: 'nirbhaya'");
-
-        // Stop scanning
-        FlutterBluePlus.stopScan();
-
-        // Connect to Raspberry Pi
-        await result.device.connect();
-        connectedDevice = result.device;
-        isConnected = true;
-        print("Connected to Raspberry Pi!");
-
-        // Discover services and characteristics
-        List<BluetoothService> services = await connectedDevice!.discoverServices();
-        for (BluetoothService service in services) {
-          for (BluetoothCharacteristic characteristic in service.characteristics) {
-            if (characteristic.properties.write) {
-              writeCharacteristic = characteristic;
-            }
-            if (characteristic.properties.notify) {
-              characteristic.value.listen((value) {
-                setState(() {
-                  receivedData = utf8.decode(value);
-                });
-              });
-              await characteristic.setNotifyValue(true);
-            }
-          }
-        }
-        setState(() {});
-        break;
-      }
-    }
-  });
-}
-
-  Future<void> _setupCharacteristics() async {
-    if (connectedDevice == null) return;
-
-    List<BluetoothService> services = await connectedDevice!.discoverServices();
-    for (BluetoothService service in services) {
-      for (BluetoothCharacteristic characteristic in service.characteristics) {
-        if (characteristic.properties.write) {
-          writeCharacteristic = characteristic;
-        }
-        if (characteristic.properties.notify) {
-          await characteristic.setNotifyValue(true);
-          characteristic.value.listen(_handleReceivedData);
-        }
-      }
-    }
-    setState(() {});
-    _checkBatteryLevel();
-  }
-
-  void _handleReceivedData(List<int> value) {
-    String data = utf8.decode(value);
-    setState(() {
-      if (data.startsWith("BAT:")) {
-        batteryLevel = data.substring(4);
-      } else {
-        receivedData = data;
-        _addLog("Received: $data");
-      }
-    });
-  }
-
-  void _addLog(String log) {
-    setState(() {
-      deviceLogs.insert(0, "${DateTime.now()}: $log");
-    });
-    if (userId != null) {
-      _database.ref("users/$userId/device_logs").set(deviceLogs);
-    }
-  }
-
-  Future<void> syncFirebaseData() async {
-    if (userId == null) return;
-    setState(() {
-      isSyncing = true;
-    });
-
-    try {
-      DatabaseReference ref = _database.ref("users/$userId/location");
-      DatabaseEvent event = await ref.once();
-      
-      if (event.snapshot.value != null) {
-        final data = event.snapshot.value as Map<dynamic, dynamic>;
-        double latitude = data['latitude'];
-        double longitude = data['longitude'];
+      });
         
-        await sendDataToRaspberryPi("LAT:$latitude,LON:$longitude");
+     _gpsSubscription = _bleService.gpsDataStream.listen((data) {
         setState(() {
-          lastSync = DateTime.now().toString();
+          latitude = data['lat'];
+          longitude = data['lon'];
+          gpsData = latitude != null && longitude != null
+              ? "Latitude: $latitude, Longitude: $longitude"
+              : "No GPS data received";
         });
-        _addLog("Location data synced successfully");
-      }
-    } catch (e) {
-      _addLog("Sync error: $e");
-    } finally {
-      setState(() {
-        isSyncing = false;
       });
-    }
-  }
-
-  Future<void> sendDataToRaspberryPi(String data) async {
-    if (writeCharacteristic != null) {
-      try {
-        await writeCharacteristic!.write(utf8.encode(data));
-        _addLog("Sent: $data");
-      } catch (e) {
-        _addLog("Send error: $e");
-        throw e;
-      }
-    }
-  }
-
-  Future<void> triggerSOS() async {
-    if (userId == null) return;
     
-    try {
-      DatabaseReference ref = _database.ref("users/$userId/emergency_contacts");
-      DatabaseEvent event = await ref.once();
-      
-      if (event.snapshot.value != null) {
-        List<dynamic> contacts = event.snapshot.value as List<dynamic>;
-        String contactsStr = contacts.join(",");
-        await sendDataToRaspberryPi("SOS:$contactsStr");
-        _addLog("SOS triggered");
-      } else {
-        _addLog("No emergency contacts found");
-      }
-    } catch (e) {
-      _addLog("SOS error: $e");
+    _batterySubscription = _bleService.batteryLevelStream.listen((level) {
+      setState(() {
+        batteryLevel = level;
+      });
+    });
+
+    // Ensure connection is restored
+  Future.delayed(Duration(seconds: 1), () {
+    if (!_bleService.isConnected) {
+      _bleService.scanAndConnect();
     }
+  });
+    
+    // Load emergency contacts and scan for device
+    _bleService.loadEmergencyContacts();
+    _bleService.scanAndConnect();
+  }
+  
+  @override
+  void dispose() {
+    // Cancel all stream subscriptions
+    _connectionSubscription.cancel();
+    _gpsSubscription.cancel();
+    _batterySubscription.cancel();
+    
+    // Clean up BleService resources
+    _bleService.dispose();
+    super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Safety Device Manager"),
-        backgroundColor: Theme.of(context).primaryColor,
-        actions: [
-          if (isConnected)
-            IconButton(
-              icon: Icon(Icons.refresh),
-              onPressed: _checkBatteryLevel,
-            ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          if (isConnected) {
-            await syncFirebaseData();
+  Future<void> _connectDevice() async {
+    if (_isConnecting || _bleService.isConnected) return;
+    
+    setState(() {
+      _isConnecting = true;
+    });
+    
+    await _bleService.scanAndConnect();
+  }
+  
+  // Add this method to disconnect the device
+  Future<void> _disconnectDevice() async {
+    if (_isDisconnecting || !_bleService.isConnected) return;
+    
+    setState(() {
+      _isDisconnecting = true;
+    });
+    
+    await _bleService.disconnectDevice();
+  }
+
+  Future<void> _requestGPSData() async {
+    if (!_bleService.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Device not connected')),
+      );
+      return;
+    }
+    
+    await _bleService.requestGPSData();
+  }
+  
+  void openInMaps() async {
+    if (latitude != null && longitude != null) {
+      final url = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
+      
+      try {
+        if (await canLaunchUrl(Uri.parse(url))) {
+          await launchUrl(Uri.parse(url));
+        } else {
+          // If Google Maps fails, try with geo: URI
+          final geoUrl = 'geo:$latitude,$longitude?q=$latitude,$longitude';
+          
+          if (await canLaunchUrl(Uri.parse(geoUrl))) {
+            await launchUrl(Uri.parse(geoUrl));
+          } else {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text("Error"),
+                content: Text("Could not open maps application"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text("OK"),
+                  ),
+                ],
+              ),
+            );
           }
-        },
-        child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildStatusCard(),
-              SizedBox(height: 16),
-              _buildActionsCard(),
-              SizedBox(height: 16),
-              _buildLogsCard(),
+        }
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Error"),
+            content: Text("Could not open maps: $e"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("OK"),
+              ),
             ],
           ),
-        ),
+        );
+      }
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final bool isConnected = _bleService.isConnected;
+    final bool isScanning = _bleService.isScanning;
+    final bool isEmergencyContactsSent = _bleService.isEmergencyContactsSent;
+    final List<String> emergencyContacts = _bleService.emergencyContacts;
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Manage Safety Wearable"),
+        backgroundColor: primaryColor,
+        actions: [
+          IconButton(
+            icon: Icon(isConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled),
+            onPressed: null,
+            tooltip: isConnected ? "Connected" : "Not connected",
+          ),
+        ],
       ),
-      floatingActionButton: isConnected
-          ? FloatingActionButton.extended(
-              onPressed: triggerSOS,
-              icon: Icon(Icons.warning_amber_rounded),
-              label: Text("SOS"),
-              backgroundColor: Colors.red,
-            )
-          : null,
-    );
-  }
-
-  Widget _buildStatusCard() {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Device Status",
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            SizedBox(height: 16),
-            _buildStatusRow(
-              "Connection",
-              isConnected ? "Connected" : "Disconnected",
-              isConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
-              isConnected ? Colors.green : Colors.red,
-            ),
-            SizedBox(height: 8),
-            _buildStatusRow(
-              "Battery",
-              batteryLevel,
-              Icons.battery_full,
-              Colors.blue,
-            ),
-            SizedBox(height: 8),
-            _buildStatusRow(
-              "Last Sync",
-              lastSync,
-              Icons.sync,
-              Colors.orange,
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: isScanning ? null : scanAndConnect,
-              icon: Icon(isScanning ? Icons.hourglass_empty : Icons.bluetooth_searching),
-              label: Text(isScanning ? "Scanning..." : "Connect Device"),
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 45),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusRow(String label, String value, IconData icon, Color color) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 20),
-        SizedBox(width: 8),
-        Text("$label:", style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(width: 8),
-        Expanded(child: Text(value)),
-      ],
-    );
-  }
-
-  Widget _buildActionsCard() {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Actions",
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: isConnected && !isSyncing ? syncFirebaseData : null,
-              icon: Icon(Icons.sync),
-              label: Text(isSyncing ? "Syncing..." : "Sync Location"),
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 45),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogsCard() {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Device Logs",
-                  style: Theme.of(context).textTheme.titleLarge,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Device status card
+              Card(
+                elevation: 3,
+                margin: EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                IconButton(
-                  icon: Icon(Icons.clear_all),
-                  onPressed: deviceLogs.isEmpty
-                      ? null
-                      : () {
-                          setState(() {
-                            deviceLogs.clear();
-                          });
-                        },
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Device Status",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isConnected ? Colors.green : Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              connectionStatus,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.device_unknown, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            "Device: ${_bleService.deviceName}",
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.battery_full, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            "Battery: $batteryLevel%",
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: LinearProgressIndicator(
+                              value: batteryLevel / 100,
+                              backgroundColor: Colors.grey.shade200,
+                              color: batteryLevel > 20 ? Colors.green : Colors.red,
+                              minHeight: 10,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ElevatedButton.icon(
+                            icon: Icon(Icons.bluetooth_searching),
+                            label: Text(isScanning ? "Scanning..." : "Connect"),
+                            onPressed: (!isConnected && !isScanning) ? _connectDevice : null, // Prevents multiple clicks
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                          ),
+
+                          OutlinedButton.icon(
+                            icon: Icon(Icons.link_off),
+                            label: Text("Disconnect"),
+                            onPressed: isConnected ? _disconnectDevice : null, // Only enable if connected
+                            style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                          ),
+
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            SizedBox(height: 8),
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
               ),
-              child: ListView.builder(
-                itemCount: deviceLogs.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: Text(
-                      deviceLogs[index],
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  );
-                },
+              
+              // Location data card
+              Card(
+                elevation: 3,
+                margin: EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Location Data",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(gpsData),
+                            if (latitude != null && longitude != null)
+                              Padding(
+                                padding: EdgeInsets.only(top: 8),
+                                child: Text(
+                                  "Coordinates: ${latitude!.toStringAsFixed(6)}, ${longitude!.toStringAsFixed(6)}",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ElevatedButton.icon(
+                            icon: Icon(Icons.my_location),
+                            label: Text("Get Location"),
+                            onPressed: isConnected ? () => _bleService.requestGPSData() : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            icon: Icon(Icons.map),
+                            label: Text("View on Map"),
+                            onPressed: isConnected && latitude != null && longitude != null ? openInMaps : null,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.indigo,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ],
+              
+              // SOS Button
+              Card(
+                elevation: 3,
+                color: Colors.red.shade50,
+                margin: EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Emergency",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        "Press the SOS button to alert emergency contacts with your current location via SMS through the GSM module.",
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      SizedBox(height: 16),
+                      Center(
+                        child: ElevatedButton.icon(
+                          icon: Icon(Icons.emergency, size: 24),
+                          label: Text(
+                            "SOS ALERT",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          onPressed: isConnected ? () async {
+                            bool success = await _bleService.triggerSOS();
+                            if (success) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text("SOS Alert Sent"),
+                                  content: Text(
+                                    "Emergency contacts have been notified with your location via SMS through the GSM module. "
+                                    "Your current coordinates: ${latitude != null && longitude != null ? '${latitude!.toStringAsFixed(6)}, ${longitude!.toStringAsFixed(6)}' : 'Unavailable'}"
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      child: Text("OK"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            } else {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text("SOS Alert Failed"),
+                                  content: Text("Could not send SOS alert. Please try again."),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      child: Text("OK"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          } : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (isConnected && !isEmergencyContactsSent)
+                        Padding(
+                          padding: EdgeInsets.only(top: 12),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "Emergency contacts not yet synced with device. Tap 'Sync Contacts' below to update.",
+                                  style: TextStyle(color: Colors.orange.shade800),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Emergency Contacts
+              Card(
+                elevation: 3,
+                margin: EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Emergency Contacts",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        emergencyContacts.isEmpty
+                            ? "No emergency contacts loaded yet."
+                            : "Your emergency contacts will receive SMS alerts with your location when you activate SOS.",
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      SizedBox(height: 8),
+                      if (emergencyContacts.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12),
+                          margin: EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (var contact in emergencyContacts)
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: 4),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.person, size: 16),
+                                      SizedBox(width: 8),
+                                      Text(contact),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      OutlinedButton.icon(
+                        icon: Icon(Icons.sync),
+                        label: Text("Sync Contacts to Device"),
+                        onPressed: isConnected && (!isEmergencyContactsSent || emergencyContacts.isEmpty) 
+                            ? _bleService.sendEmergencyContactsToBLE
+                            : null,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.purple,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Device settings
+              Card(
+                elevation: 3,
+                margin: EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Device Settings",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SwitchListTile(
+                        title: Text("Fall Detection"),
+                        subtitle: Text("Automatically detect falls and send alerts"),
+                        value: true,
+                        onChanged: isConnected ? (value) {
+                          // Toggle fall detection
+                        } : null,
+                      ),
+                      SwitchListTile(
+                        title: Text("Location Tracking"),
+                        subtitle: Text("Periodically send location updates"),
+                        value: true,
+                        onChanged: isConnected ? (value) {
+                          // Toggle location tracking
+                        } : null,
+                      ),
+                      SwitchListTile(
+                        title: Text("Power Saving Mode"),
+                        subtitle: Text("Extends battery life with reduced updates"),
+                        value: false,
+                        onChanged: isConnected ? (value) {
+                          // Toggle power saving
+                        } : null,
+                      ),
+                      SwitchListTile(
+                        title: Text("GSM Module"),
+                        subtitle: Text("Enable SMS alerts through GSM module"),
+                        value: true,
+                        onChanged: isConnected ? (value) {
+                          // Toggle GSM module
+                        } : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

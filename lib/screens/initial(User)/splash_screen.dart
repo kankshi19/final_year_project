@@ -65,24 +65,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       if (user != null) {
         await _navigateBasedOnUserType(user.uid);
       } else {
-        await _navigateBasedOnUserType(user.uid);
-      } else {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
-          MaterialPageRoute(builder: (context) => UserTypeSelectionScreen()),
+
         );
       }
     }
   }
 
-  Future<void> _navigateBasedOnUserType(String uid) async {
-    try {
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      if (userDoc.exists) {
-      }
-    }
-  }
+  
 
   Future<void> _navigateBasedOnUserType(String uid) async {
     try {

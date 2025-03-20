@@ -200,6 +200,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: () => Navigator.pushNamed(context, AppRoutes.privacySettings),
                   ),
                   _buildSettingsTile(
+                    icon: Icons.check_circle_outline,
+                    title: 'Check-in',
+                    subtitle: 'Manage your auto-checkins',
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.checkin),
+                  ),
+                  _buildSettingsTile(
                     icon: Icons.refresh,
                     title: 'Reset App',
                     subtitle: 'Clear all app data and settings',

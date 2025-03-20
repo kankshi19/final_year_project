@@ -137,34 +137,40 @@ static Future<List<Map<String, dynamic>>> fetchRoutes({
     print('Error in test: $e');
   }
 }
-static Future<List<EnhancedRoute>> fetchRoutesWithCrowdData({
-    required double startLat,
-    required double startLng,
-    required double endLat,
-    required double endLng,
-  }) async {
-    final routes = await fetchRoutes(
-      startLat: startLat,
-      startLng: startLng,
-      endLat: endLat,
-      endLng: endLng,
-    );
+// static Future<List<EnhancedRoute>> fetchRoutesWithCrowdData({
+//   required double startLat,
+//   required double startLng,
+//   required double endLat,
+//   required double endLng,
+// }) async {
+//   final routes = await fetchRoutes(
+//     startLat: startLat,
+//     startLng: startLng,
+//     endLat: endLat,
+//     endLng: endLng,
+//   );
 
-    // Enhance routes with crowd data
-    List<EnhancedRoute> enhancedRoutes = [];
-    for (var route in routes) {
-      // Mock crowd data for now
-      Map<String, dynamic> enhancedRoute = {
-        ...route,
-        'crowd_density': 0.5, // Replace with actual crowd data
-        'historical_incident_rate': 0.3, // Replace with actual historical data
-      };
-      
-      enhancedRoutes.add(EnhancedRoute.fromApiResponse(enhancedRoute));
-    }
-    
-    return enhancedRoutes;
-  }
+//   // Process routes asynchronously
+//   List<Future<EnhancedRoute>> enhancedRouteFutures = routes.map((route) async {
+//     double latitude = route['latitude'] ?? 0.0;
+//     double longitude = route['longitude'] ?? 0.0;
+
+//     // Fetch real-time crowd and historical data
+//     int crowdDensity = await RouteAnalyzer.fetchCrowdDensity(latitude, longitude);
+//     double historicalIncidentRate = await RouteAnalyzer.fetchHistoricalIncidentRate(latitude, longitude);
+
+//     // Create enhanced route with real data
+//     Map<String, dynamic> enhancedRoute = {
+//       ...route,
+//       'crowd_density': crowdDensity.toDouble(),
+//       'historical_incident_rate': historicalIncidentRate,
+//     };
+
+//     return await EnhancedRoute.fromApiResponse(enhancedRoute);
+//   }).toList();
+
+//   return await Future.wait(enhancedRouteFutures);
+// }
 
   // Fetch directions polyline
   static Future<List<dynamic>> fetchDirections(

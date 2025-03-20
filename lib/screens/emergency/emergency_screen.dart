@@ -7,6 +7,7 @@ import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart
 import 'package:flutter_native_contact_picker/model/contact.dart';
 import 'package:location/location.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:safety_app/services/bleService.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -31,6 +32,12 @@ class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProv
 
   int _countdown = 10;
   Timer? _timer;
+  final BleService _bleService = BleService();
+  bool _isSending = false;
+  String _sosStatus = "";
+  bool _isWearableConnected = false;
+
+  StreamSubscription<String>? _connectionSubscription;
 
   void _startCountdown(BuildContext context) {
     _countdown = 10;
@@ -82,8 +89,48 @@ class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProv
 
   void _triggerSOS() {
     Navigator.pop(context); // Close the dialog
-    sendSOS();
+    
+    setState(() {
+      _isSending = true;
+      _sosStatus = "Sending SOS signal...";
+    });
+    
+    // Use BleService to trigger SOS
+    _bleService.triggerSOS().then((success) {
+      setState(() {
+        _isSending = false;
+        _sosStatus = success 
+            ? "SOS signal sent successfully!" 
+            : "Failed to send SOS. Using cloud backup.";
+      });
+      
+      // Also send to Firebase as backup
+      sendSOS();
+      
+      // Show result notification
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_sosStatus),
+          backgroundColor: success ? Colors.green : Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }).catchError((error) {
+      setState(() {
+        _isSending = false;
+        _sosStatus = "Error: Using cloud backup";
+      });
+      
+      // Fallback to Firebase
+      sendSOS();
+    });
   }
+
+void _checkBleConnection() async {
+  if (!_bleService.isConnected) {
+    await _bleService.scanAndConnect();
+  }
+}
 
   void sendSOS() {
     String? userId = FirebaseAuth.instance.currentUser?.uid;
@@ -102,12 +149,23 @@ class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProv
 
 
   @override
-  void initState() {
+   void initState() {
     super.initState();
     _sosAnimationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
+    
+    // Initialize connection status
+    _isWearableConnected = _bleService.isConnected;
+    
+    // Subscribe to connection status updates
+    _connectionSubscription = _bleService.connectionStatusStream.listen((status) {
+      setState(() {
+        _isWearableConnected = status == "Connected";
+      });
+    });
+    
     _initializeData();
   }
 
@@ -122,7 +180,17 @@ class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProv
   @override
   void dispose() {
     _sosAnimationController.dispose();
+     _connectionSubscription?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check connection status
+    setState(() {
+      _isWearableConnected = _bleService.isConnected;
+    });
   }
 
   
@@ -319,15 +387,15 @@ String? getCurrentUserId() {
       animation: _sosAnimationController,
       builder: (context, child) {
         return GestureDetector(
-          onDoubleTap: () => _startCountdown(context),
+          onDoubleTap: _isSending ? null : () => _startCountdown(context),
           child: Container(
             height: 120,
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFFFF4B4B),
-                  Color(0xFFFF6B6B),
+                  _isSending ? Colors.grey : Color(0xFFFF4B4B),
+                  _isSending ? Colors.grey.shade400 : Color(0xFFFF6B6B),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -335,7 +403,7 @@ String? getCurrentUserId() {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xFFFF4B4B).withOpacity(0.3),
+                  color: (_isSending ? Colors.grey : Color(0xFFFF4B4B)).withOpacity(0.3),
                   blurRadius: 12 + (_sosAnimationController.value * 12),
                   spreadRadius: 2 + (_sosAnimationController.value * 4),
                 ),
@@ -344,14 +412,23 @@ String? getCurrentUserId() {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.emergency,
-                  color: Colors.white,
-                  size: 40 + (_sosAnimationController.value * 8),
-                ),
+                _isSending
+                  ? SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : Icon(
+                      Icons.emergency,
+                      color: Colors.white,
+                      size: 40 + (_sosAnimationController.value * 8),
+                    ),
                 SizedBox(height: 8),
                 Text(
-                  'SOS',
+                  _isSending ? 'Sending...' : 'SOS',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -360,7 +437,11 @@ String? getCurrentUserId() {
                   ),
                 ),
                 Text(
-                  'Tap to Send Emergency Alert',
+                  _isSending 
+                    ? _sosStatus 
+                    : _isWearableConnected
+                      ? 'Double Tap to Send Emergency Alert'
+                      : 'Wearable not connected',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 14,
