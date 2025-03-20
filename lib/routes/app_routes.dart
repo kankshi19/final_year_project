@@ -8,6 +8,7 @@ import '../screens/community_chat/community_chat_screen.dart';
 import '../screens/home/map_screen.dart';
 import '../screens/initial(User)/login_screen.dart';
 import '../screens/initial(User)/signup_screen.dart';
+import '../screens/settings/check_in_screen.dart';
 import '../screens/settings/notification_settings_screen.dart';
 import '../screens/settings/privacy_settings_screen.dart';
 import '../screens/settings/settings_screen.dart';
@@ -57,6 +58,7 @@ class AppRoutes {
   static const String parentSettings = '/parentSettings-screen';
   static const String communityGuidelines = '/communityGuidelines-screen';
 
+  static const String checkin = '/check-in-screen';
   
 
 
@@ -89,6 +91,7 @@ class AppRoutes {
       videoCall: (context) => VideoCallScreen(chatId: 'chatId', callId: '',),
       parentSettings: (context) => ParentSettingsScreen(),
       communityGuidelines: (context) => CommunityGuidelinesScreen(),
+      checkin: (context) => CheckInScreen(userId: '',),
     };
   }
 }

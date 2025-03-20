@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geocoding/geocoding.dart';
@@ -294,6 +296,7 @@ Widget _buildHeader() {
                     color: Colors.white.withOpacity(0.9),
                   ),
                 ),
+
               ],
             ),
             Material(

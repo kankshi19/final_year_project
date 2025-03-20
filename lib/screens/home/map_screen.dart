@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -8,6 +9,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:safety_app/services/notification_service.dart';
 import 'package:safety_app/utils/constants.dart';
+
+import '../../services/bleService.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -20,6 +23,15 @@ class _MapScreenState extends State<MapScreen> {
   String _zone = "Fetching zone...";
   String _safety_score = "0.0..";
   final double _radius = 200;
+
+  int _countdown = 10;
+  Timer? _timer;
+  final BleService _bleService = BleService();
+  bool _isSending = false;
+  String _sosStatus = "";
+  bool _isWearableConnected = false;
+
+
   List<CircleMarker> _zoneMarkers = [];
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
   User? _user;
@@ -27,9 +39,128 @@ class _MapScreenState extends State<MapScreen> {
   // Replace with your Google API key
   final String gmaps_apiKey = google_mapApiKey;
 
+  StreamSubscription<String>? _connectionSubscription;
+
+  void _startCountdown(BuildContext context) {
+    _countdown = 10;
+
+    // Start the countdown timer
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_countdown > 0) {
+        setState(() {
+          _countdown--;
+        });
+      } else {
+        _triggerSOS();
+        timer.cancel();
+      }
+    });
+
+    // Show the confirmation dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevents dismissing by tapping outside
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Emergency SOS!"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Sending emergency SOS in $_countdown seconds..."),
+                  SizedBox(height: 10),
+                  CircularProgressIndicator(),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _timer?.cancel();
+                    Navigator.pop(context); // Close dialog
+                  },
+                  child: Text("I'm OK, Cancel SOS"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _triggerSOS() {
+    Navigator.pop(context); // Close the dialog
+    
+    setState(() {
+      _isSending = true;
+      _sosStatus = "Sending SOS signal...";
+    });
+    
+    // Use BleService to trigger SOS
+    _bleService.triggerSOS().then((success) {
+      setState(() {
+        _isSending = false;
+        _sosStatus = success 
+            ? "SOS signal sent successfully!" 
+            : "Failed to send SOS. Using cloud backup.";
+      });
+      
+      // Also send to Firebase as backup
+      sendSOS();
+      
+      // Show result notification
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_sosStatus),
+          backgroundColor: success ? Colors.green : Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }).catchError((error) {
+      setState(() {
+        _isSending = false;
+        _sosStatus = "Error: Using cloud backup";
+      });
+      
+      // Fallback to Firebase
+      sendSOS();
+    });
+  }
+
+void _checkBleConnection() async {
+  if (!_bleService.isConnected) {
+    await _bleService.scanAndConnect();
+  }
+}
+
+  void sendSOS() {
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      DatabaseReference ref = FirebaseDatabase.instance.ref("sos_trigger/$userId");
+      ref.set({
+        "triggered": true,
+        "timestamp": DateTime.now().millisecondsSinceEpoch,
+      }).then((_) {
+        print("✅ SOS Triggered!");
+      }).catchError((error) {
+        print("❌ Failed to trigger SOS: $error");
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    // Initialize connection status
+    _isWearableConnected = _bleService.isConnected;
+    
+    // Subscribe to connection status updates
+    _connectionSubscription = _bleService.connectionStatusStream.listen((status) {
+      setState(() {
+        _isWearableConnected = status == "Connected";
+      });
+    });
     _location = Location();
     _user = FirebaseAuth.instance.currentUser;
     _getCurrentLocation();
@@ -71,18 +202,18 @@ class _MapScreenState extends State<MapScreen> {
   }
 
 Future<void> _fetchSafetyData(double lat, double lon) async {
-  final Uri url = Uri.parse("https://vidhi91-virtual-space.hf.space/predict");
+  final Uri url = Uri.parse("https://helishah12-miracle-space.hf.space/predict/");
 
   int neighborhood = await _fetchNeighborhood(lat, lon);
-  int crimeTime = DateTime.now().hour >= 18 ? 1 : 0;
+  double crimeTime = DateTime.now().hour >= 18 ? 1 : 0;
 
   Map<String, dynamic> requestBody = {
+    "latitude": lat,
+    "longitude": lon,
     "crime_time": crimeTime,
     "crowd_density": await _fetchCrowdDensity(lat, lon),
-    "weather_condition": await _fetchWeather(lat, lon),
+    "weather_condition_encoded": await _fetchWeather(lat, lon),
     "neighborhood": neighborhood,
-    "longitude": lon,
-    "latitude": lat,
   };
 
   try {
@@ -95,7 +226,10 @@ Future<void> _fetchSafetyData(double lat, double lon) async {
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
       // double crime_rate = data["crime_rate_prediction"] ?? 0.0;
-      double safetyScore = data["safety_score"] ?? 0.0;
+      double safetyScore = data['safety_score'] is int
+    ? (data['safety_score'] as int).toDouble()
+    : (data['safety_score'] as double);
+
       
       String zone;
       if (safetyScore >= 7) {
@@ -419,9 +553,7 @@ Future<void> _fetchSafetyData(double lat, double lon) async {
 
   Widget _buildQuickSOSButton() {
     return GestureDetector(
-      onTap: () {
-        // Add SOS functionality
-      },
+      onDoubleTap: _isSending ? null : () => _startCountdown(context),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(

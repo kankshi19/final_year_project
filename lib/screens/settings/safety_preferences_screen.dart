@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../utils/constants.dart';
+
 class SafetyPreferencesScreen extends StatefulWidget {
   @override
   _SafetyPreferencesScreenState createState() => _SafetyPreferencesScreenState();
@@ -68,7 +70,7 @@ class _SafetyPreferencesScreenState extends State<SafetyPreferencesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Safety Preferences"),
-        backgroundColor: const Color.fromARGB(255, 58, 156, 183),
+        backgroundColor: primaryColor,
         elevation: 0,
       ),
       body: isLoading
@@ -103,7 +105,7 @@ class _SafetyPreferencesScreenState extends State<SafetyPreferencesScreen> {
                           _updateSafetyPreference('autoAlertEnabled', value);
                         },
                         activeColor:
-                            Color.fromARGB(255, 58, 156, 183),
+                            primaryColor,
                         secondary:
                             Icon(Icons.alarm_add, color: Colors.black54),
                       ),
@@ -155,7 +157,7 @@ class _SafetyPreferencesScreenState extends State<SafetyPreferencesScreen> {
                           _updateSafetyPreference('shareLocationEnabled', value);
                         },
                         activeColor:
-                            Color.fromARGB(255, 58, 156, 183),
+                            primaryColor,
                         secondary:
                             Icon(Icons.location_on, color: Colors.black54),
                       ),
@@ -175,7 +177,7 @@ class _SafetyPreferencesScreenState extends State<SafetyPreferencesScreen> {
                       style:
                           ElevatedButton.styleFrom(
                         backgroundColor:
-                            Color.fromARGB(255, 58, 156, 183),
+                            primaryColor,
                         padding:
                             EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       ),
