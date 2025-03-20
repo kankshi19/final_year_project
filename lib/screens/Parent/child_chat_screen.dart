@@ -1,9 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:intl/intl.dart';
-import 'package:safety_app/screens/video_call/videocall_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ChildChatScreen extends StatefulWidget {
@@ -65,24 +63,22 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
     );
   }
 
-  void _startVideoCall() async {
-    String currentUserId = _auth.currentUser!.uid;
-    await FirebaseFirestore.instance.collection('video_calls').doc(chatId).set({
-      'callerId': currentUserId,
-      'receiverId': widget.childId,
-      'status': 'calling',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChildVideoCallScreen(chatId: chatId!),
+  void _showVideoCallPopup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Feature Coming Soon!"),
+        content: Text("The video call feature will be implemented in a future update."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("OK", style: TextStyle(color: primaryColor)),
+          ),
+        ],
       ),
     );
   }
-
-  // ... [Previous methods remain the same: _createChatId, _sendMessage, _startVideoCall]
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +157,7 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
               ),
               child: Icon(Icons.video_call, color: primaryColor),
             ),
-            onPressed: _startVideoCall,
+            onPressed: _showVideoCallPopup, // Popup instead of video call
           ),
           SizedBox(width: 8),
         ],
@@ -252,27 +248,17 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: InputDecoration(
-                        hintText: 'Type your message...',
-                        hintStyle: GoogleFonts.inter(
-                          color: Colors.grey,
-                          fontSize: 14,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 20),
-                      ),
-                    ),
+              child: TextField(
+                controller: _messageController,
+                decoration: InputDecoration(
+                  hintText: 'Type your message...',
+                  hintStyle: GoogleFonts.inter(
+                    color: Colors.grey,
+                    fontSize: 14,
                   ),
-                  IconButton(
-                    icon: Icon(Icons.emoji_emotions_outlined, color: Colors.grey),
-                    onPressed: () {}, // Add emoji picker functionality
-                  ),
-                ],
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 20),
+                ),
               ),
             ),
           ),
@@ -294,21 +280,6 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
   }
 }
 
-//✅ Updated Video Call Screen for Child
-class ChildVideoCallScreen extends StatelessWidget {
-  final String chatId;
-
-  const ChildVideoCallScreen({super.key, required this.chatId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Child Video Call")),
-      body: Center(child: Text("Video Call with $chatId")),
-    );
-  }
-}
-
 class MessageBubble extends StatelessWidget {
   final String message;
   final bool isMe;
@@ -316,7 +287,7 @@ class MessageBubble extends StatelessWidget {
   final Color primaryColor;
   final Color backgroundColor;
 
-   MessageBubble({
+  MessageBubble({
     required this.message,
     required this.isMe,
     required this.time,
@@ -324,8 +295,7 @@ class MessageBubble extends StatelessWidget {
     required this.backgroundColor,
   });
 
-
-   @override
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: 16),

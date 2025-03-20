@@ -16,6 +16,12 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseDatabase _realtimedb = FirebaseDatabase.instance;
 
+  // App color scheme - using teal variations
+  final Color primaryTeal = const Color(0xFF3EAAA5);
+  final Color lightTeal = const Color(0xFFE0F4F3);
+  final Color brighterTeal = const Color(0xFF65C8C4); // Brighter version
+  final Color accentYellow = const Color(0xFFFFC107);
+
   String parentName = "";
   String parentPhone = "";
   String parentEmail = "";
@@ -121,7 +127,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
       backgroundColor: Color(0xFFF8F9FE),
       body: Stack(
         children: [
-          // Top decorative wave
+          // Top decorative wave - Using lighter teal gradient
           Positioned(
             top: 0,
             left: 0,
@@ -133,8 +139,8 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFFFF6B6B),
-                    Color(0xFFFF9F9F),
+                    brighterTeal,
+                    primaryTeal,
                   ],
                 ),
                 borderRadius: BorderRadius.only(
@@ -194,7 +200,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
             child: Icon(
               Icons.person,
               size: 60,
-              color: Color(0xFFFF6B6B),
+              color: brighterTeal, // Lighter teal
             ),
           ).animate().scale().fade(),
           SizedBox(height: 20),
@@ -231,14 +237,14 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
             icon: Icons.email,
             title: "Email",
             value: parentEmail,
-            color: Color(0xFF4ECDC4),
+            color: primaryTeal,
           ),
           Divider(height: 30),
           _buildContactInfo(
             icon: Icons.phone,
             title: "Phone",
             value: parentPhone,
-            color: Color(0xFFFFBE0B),
+            color: accentYellow,
           ),
         ],
       ),
@@ -360,7 +366,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                               Icon(
                                 Icons.location_on,
                                 size: 18,
-                                color: Color(0xFF4ECDC4),
+                                color: brighterTeal, // Lighter teal
                               ),
                               SizedBox(width: 8),
                               Expanded(
@@ -385,14 +391,14 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Color(0xFF4ECDC4),
-                              Color(0xFF45B7AF),
+                              brighterTeal, // Lighter teal
+                              primaryTeal,
                             ],
                           ),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Color(0xFF4ECDC4).withOpacity(0.3),
+                              color: brighterTeal.withOpacity(0.3),
                               blurRadius: 10,
                               offset: Offset(0, 5),
                             ),
@@ -427,7 +433,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFFFF6B6B),
+          backgroundColor: brighterTeal, // Lighter teal for button
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),

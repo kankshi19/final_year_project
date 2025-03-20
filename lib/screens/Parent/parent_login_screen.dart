@@ -84,7 +84,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> with SingleTicker
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text("Sign in Unsuccessful"),
+              title: Text("Log in Unsuccessful"),
               content: Text("You have not signed up with Google before"),
               actions: [
                 TextButton(
@@ -96,7 +96,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> with SingleTicker
           );
         } else {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text("Parent signed in successfully!")));
+              .showSnackBar(SnackBar(content: Text("Parent Login in successfully!")));
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => LinkChildScreen()),
@@ -104,9 +104,9 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> with SingleTicker
         }
       }
     } catch (e) {
-      print('Error during Google Sign in: $e');
+      print('Error during Google Log in: $e');
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Sign in failed. Please try again.')));
+          .showSnackBar(SnackBar(content: Text('Login in failed. Please try again.')));
     }
   }
 

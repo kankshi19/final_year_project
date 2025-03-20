@@ -8,12 +8,14 @@ import 'package:workmanager/workmanager.dart';
 import 'theme/theme_provider.dart';
 import 'services/background_service.dart';
 import 'services/notification_service.dart';
+import 'utils/shared_prefs_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await NotificationService.initialize();
   Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  await SharedPreferences.getInstance(); 
 
   await Workmanager().registerPeriodicTask(
       "safety-tips-task",
@@ -23,13 +25,27 @@ void main() async {
     );
   
   // Initialize services
-  await BackgroundService.initializeService();
+  //await BackgroundService.initializeService();
   await Firebase.initializeApp();
 
   // Get the saved preferences
   final prefs = await SharedPreferences.getInstance();
   final bool isDarkMode = prefs.getBool('isDarkMode') ?? false;
   final bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
+
+  // Load the last selected child's ID and name
+  final selectedChildId = prefs.getString('selected_child_id');
+  final selectedChildName = prefs.getString('selected_child_name');
+
+  print("DEBUG: Selected Child ID -> $selectedChildId");
+  print("DEBUG: Selected Child Name -> $selectedChildName");
+
+
+  // Save loaded values in SharedPrefsHelper for global access
+  if (selectedChildId != null) {
+    await SharedPrefsHelper.saveSelectedChild(selectedChildId, selectedChildName ?? "Unknown");
+  }
+
 
   runApp(
     ChangeNotifierProvider(
