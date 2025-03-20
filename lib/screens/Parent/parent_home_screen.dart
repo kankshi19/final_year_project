@@ -9,7 +9,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:safety_app/screens/Parent/parent_settings.dart';
 import 'child_chat_screen.dart';
 import 'parent_profile.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:safety_app/utils/shared_prefs_helper.dart';
 import 'package:intl/intl.dart';
 
