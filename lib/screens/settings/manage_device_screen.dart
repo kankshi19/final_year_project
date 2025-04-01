@@ -85,25 +85,33 @@ class _ManageWearableScreenState extends State<ManageWearableScreen> {
   }
 
   Future<void> _connectDevice() async {
-    if (_isConnecting || _bleService.isConnected) return;
-    
-    setState(() {
-      _isConnecting = true;
-    });
-    
-    await _bleService.scanAndConnect();
-  }
+  if (_isConnecting || _bleService.isConnected) return;
+  
+  setState(() {
+    _isConnecting = true;
+  });
+  
+  await _bleService.scanAndConnect();
+  
+  setState(() {
+    _isConnecting = false;
+  });
+}
   
   // Add this method to disconnect the device
   Future<void> _disconnectDevice() async {
-    if (_isDisconnecting || !_bleService.isConnected) return;
-    
-    setState(() {
-      _isDisconnecting = true;
-    });
-    
-    await _bleService.disconnectDevice();
-  }
+  if (_isDisconnecting || !_bleService.isConnected) return;
+  
+  setState(() {
+    _isDisconnecting = true;
+  });
+  
+  await _bleService.disconnectDevice();
+  
+  setState(() {
+    _isDisconnecting = false;
+  });
+}
 
   Future<void> _requestGPSData() async {
     if (!_bleService.isConnected) {
@@ -265,7 +273,7 @@ class _ManageWearableScreenState extends State<ManageWearableScreen> {
                           ElevatedButton.icon(
                             icon: Icon(Icons.bluetooth_searching),
                             label: Text(isScanning ? "Scanning..." : "Connect"),
-                            onPressed: (!isConnected && !isScanning) ? _connectDevice : null, // Prevents multiple clicks
+                            onPressed: (!isConnected && !isScanning) ? _connectDevice : null,
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
                           ),
 

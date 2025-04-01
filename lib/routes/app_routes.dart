@@ -27,6 +27,7 @@ import '../screens/Parent/parent_profile.dart';
 import '../screens/video_call/videocall_screen.dart';
 import '../screens/Parent/parent_settings.dart';
 import '../screens/Parent/community_guidelines_screen.dart';
+import '../screens/home/select_parent_screen.dart';
 
 class AppRoutes {
   static const String home = '/';
@@ -57,8 +58,8 @@ class AppRoutes {
   static const String videoCall = '/video_call';
   static const String parentSettings = '/parentSettings-screen';
   static const String communityGuidelines = '/communityGuidelines-screen';
-
   static const String checkin = '/check-in-screen';
+  static const String selectParent = '/selectParent-sceen';
   
 
 
@@ -85,13 +86,14 @@ class AppRoutes {
       setupUser: (context) => CompleteSetupPage(),
       setupParent: (context) => SetupParentPage(),
       linkChild: (context) => LinkChildScreen(),
-      childChat: (context) => ChildChatScreen(childId: 'childId',childName: 'childName',),
-      parentChat: (context) => ParentChatScreen(),
+      childChat: (context) => ChildChatScreen(childId: 'childId',childName: 'childName', parentId: '',),
+      parentChat: (context) => ParentChatScreen(parentId: '', parentName:'',childId: '',),
       parentProfile: (context) => ParentProfileScreen(),
       videoCall: (context) => VideoCallScreen(chatId: 'chatId', callId: '',),
       parentSettings: (context) => ParentSettingsScreen(),
       communityGuidelines: (context) => CommunityGuidelinesScreen(),
       checkin: (context) => CheckInScreen(userId: '',),
+      selectParent: (context) => SelectParentScreen(),
     };
   }
 }

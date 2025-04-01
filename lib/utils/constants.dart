@@ -7,6 +7,7 @@ const double defaultPadding = 16.0;
 const double defaultMargin = 20.0;
 const String weatherApiKey = 'a429455fd547e817545979f8d3414be2';
 const String google_mapApiKey = 'AIzaSyBNshGF10FPBnYO4oaYTnN2Lxuu580rxd8';
+const String gmaps_routes = 'AIzaSyAwevOnGuifv33Rodc_Uch0jSkFuTLi-7g';
 const String crowdApiKey = 'a429455fd547e817545979f8d3414be2';
 const String chatbotApiKey = 'AIzaSyBeBoskGYkhRKdYklXSvH7w-GgzI7iiSUY';
 const String chatbotModel = 'gemini-1.5-flash';

@@ -205,7 +205,7 @@ Future<void> _fetchSafetyData(double lat, double lon) async {
   final Uri url = Uri.parse("https://helishah12-miracle-space.hf.space/predict/");
 
   int neighborhood = await _fetchNeighborhood(lat, lon);
-  double crimeTime = DateTime.now().hour >= 18 ? 1 : 0;
+  double crimeTime = DateTime.now().hour >= 20 ? 1 : 0;
 
   Map<String, dynamic> requestBody = {
     "latitude": lat,

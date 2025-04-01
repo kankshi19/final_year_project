@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.chat),
             onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.parentChat); // Redirect to chatbot screen
+                  Navigator.pushNamed(context, AppRoutes.selectParent); 
             },
           ),
           IconButton(

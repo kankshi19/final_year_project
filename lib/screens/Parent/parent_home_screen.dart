@@ -53,40 +53,38 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
   }
 
   Future<void> _loadSelectedChild() async {
-  final childId = await SharedPrefsHelper.getSelectedChildId();
-  final childName = await SharedPrefsHelper.getSelectedChildName();
-  print("DEBUG: Loaded Child -> ID: $childId, Name: $childName");
+    final childId = await SharedPrefsHelper.getSelectedChildId();
+    final childName = await SharedPrefsHelper.getSelectedChildName();
+    print("DEBUG: Loaded Child -> ID: $childId, Name: $childName");
 
-  if (childId != null && childName != null) {
-    setState(() {
-      selectedChildId = childId;
-      selectedChildName = childName;
-    });
-    print("DEBUG: Updated UI -> Child ID: $selectedChildId, Name: $selectedChildName");
-
-    _listenToChildLocation(selectedChildId!); // Start listening to location
-    //_fetchChildName(selectedChildId!); // Uncomment if needed
-  } else {
-    print("ERROR: No child found in SharedPreferences. Using widget values.");
-
-    if (widget.childId != null && widget.childId!.isNotEmpty) {
+    if (childId != null && childName != null) {
       setState(() {
-        selectedChildId = widget.childId;
-        selectedChildName = widget.childName.isNotEmpty ? widget.childName : "Unknown Child";
+        selectedChildId = childId;
+        selectedChildName = childName;
       });
+      print("DEBUG: Updated UI -> Child ID: $selectedChildId, Name: $selectedChildName");
 
-      _listenToChildLocation(selectedChildId!);
-      _fetchChildName(selectedChildId!);
-
-      await SharedPrefsHelper.saveSelectedChild(selectedChildId!, selectedChildName!);
-      print("DEBUG: Saved Child -> ID: $selectedChildId, Name: $selectedChildName");
+      _listenToChildLocation(selectedChildId!); // Start listening to location
+      //_fetchChildName(selectedChildId!); // Uncomment if needed
     } else {
-      print("ERROR: Even widget values are null! Cannot proceed.");
+      print("ERROR: No child found in SharedPreferences. Using widget values.");
+
+      if (widget.childId != null && widget.childId!.isNotEmpty) {
+        setState(() {
+          selectedChildId = widget.childId;
+          selectedChildName = widget.childName.isNotEmpty ? widget.childName : "Unknown Child";
+        });
+
+        _listenToChildLocation(selectedChildId!);
+        _fetchChildName(selectedChildId!);
+
+        await SharedPrefsHelper.saveSelectedChild(selectedChildId!, selectedChildName!);
+        print("DEBUG: Saved Child -> ID: $selectedChildId, Name: $selectedChildName");
+      } else {
+        print("ERROR: Even widget values are null! Cannot proceed.");
+      }
     }
   }
-}
-
-
 
   void _listenToChildLocation(String childId) {
     _dbRef.child('users').child(childId).child('location').onValue.listen((event) {
@@ -94,10 +92,22 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
         _isLoading = false;
         if (event.snapshot.exists) {
           final data = event.snapshot.value as Map<dynamic, dynamic>;
+
+          // Debugging: Print the raw timestamp
+          print("Raw Timestamp from Firebase: ${data['timestamp']}");
+
           final latitude = data['latitude'] as double;
           final longitude = data['longitude'] as double;
           _childLocation = LatLng(latitude, longitude);
-          lastUpdated = DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int);
+
+          // Convert timestamp safely
+          if (data['timestamp'] != null) {
+            int timestamp = (data['timestamp'] as num).toInt();
+            lastUpdated = DateTime.fromMillisecondsSinceEpoch(timestamp).toLocal();
+          } else {
+            lastUpdated = null;
+          }
+
           _getAddressFromCoordinates(latitude, longitude);
         } else {
           _childLocation = null;
@@ -165,7 +175,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChildChatScreen(childId: selectedChildId!, childName: selectedChildName!),
+        builder: (context) => ChildChatScreen(childId: selectedChildId!, childName: selectedChildName!, parentId: '',),
       ),
     );
   }

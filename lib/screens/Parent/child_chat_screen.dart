@@ -7,8 +7,13 @@ import 'package:google_fonts/google_fonts.dart';
 class ChildChatScreen extends StatefulWidget {
   final String childId;
   final String childName;
+   final String parentId;
 
-  ChildChatScreen({required this.childId, required this.childName});
+  ChildChatScreen({
+    required this.childId, 
+    required this.childName, 
+    required this.parentId
+  });
 
   @override
   _ChildChatScreenState createState() => _ChildChatScreenState();
@@ -33,25 +38,25 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
   }
 
   void _createChatId() {
-    String currentUserId = _auth.currentUser!.uid;
-    String childId = widget.childId;
-    chatId = currentUserId.hashCode < childId.hashCode
-        ? '${currentUserId}_${widget.childId}'
-        : '${widget.childId}_${currentUserId}';
+    // Consistent chat ID generation using child and parent IDs
+    List<String> sortedIds = [widget.childId, widget.parentId]..sort();
+    chatId = '${sortedIds[0]}_${sortedIds[1]}';
+    print("✅ Child-Parent Chat ID: $chatId");
   }
 
-  void _sendMessage() async {
+void _sendMessage() async {
     if (_messageController.text.isEmpty || chatId == null) return;
 
-    String currentUserId = _auth.currentUser!.uid;
+    String currentUserId = _auth.currentUser !.uid;
 
     await FirebaseFirestore.instance
         .collection('chats')
         .doc(chatId)
         .collection('messages')
         .add({
-      'sender': currentUserId,
-      'text': _messageController.text,
+      'senderId': currentUserId,
+      'receiverId': widget.parentId,
+      'text': _messageController.text.trim(),
       'timestamp': FieldValue.serverTimestamp(),
     });
 
@@ -62,8 +67,7 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
       curve: Curves.easeOut,
     );
   }
-
-
+  
   void _showVideoCallPopup() {
     showDialog(
       context: context,
@@ -197,12 +201,16 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
           .orderBy('timestamp', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator(color: primaryColor));
         }
 
-        var messages = snapshot.data!.docs;
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text("No messages found."));
+        }
 
+        var messages = snapshot.data!.docs;
+        
         return ListView.builder(
           reverse: true,
           controller: _scrollController,
@@ -210,22 +218,64 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
           itemCount: messages.length,
           itemBuilder: (context, index) {
             var message = messages[index];
-            bool isMe = message['sender'] == _auth.currentUser!.uid;
+            var messageData = message.data() as Map<String, dynamic>?;
 
-            return MessageBubble(
-              message: message['text'],
-              isMe: isMe,
-              time: message['timestamp'] != null
-                  ? DateFormat('HH:mm').format(message['timestamp'].toDate())
-                  : '',
-              primaryColor: messageBubbleColor,
-              backgroundColor: otherMessageBubbleColor,
+            // 🛑 Fix: Ensure messageData is valid
+            if (messageData == null ||
+                !messageData.containsKey('senderId') ||
+                !messageData.containsKey('receiverId') ||
+                !messageData.containsKey('text')) {
+              print("⚠️ Skipping message due to missing fields: ${message.id}");
+              return SizedBox.shrink(); // Skip incomplete messages
+            }
+
+            String senderId = messageData['senderId'];
+            String receiverId = messageData['receiverId'];
+            String messageText = messageData['text'];
+            Timestamp? timestamp = messageData['timestamp'];
+
+            bool isMe = senderId == _auth.currentUser!.uid;
+            
+
+            // 🛑 Debugging: Check if the child is receiving messages correctly
+            print("📩 Message ID: ${message.id}, Sender: $senderId, Receiver: $receiverId, Text: $messageText");
+            
+
+            return Align(
+              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isMe ? Colors.teal : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      messageText,
+                      style: TextStyle(color: isMe ? Colors.white : Colors.black),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      timestamp != null
+                          ? DateFormat('HH:mm').format(timestamp.toDate())
+                          : 'Unknown Time',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
             );
           },
         );
       },
     );
   }
+
+
+
 
   Widget _buildMessageInput() {
     return Container(
