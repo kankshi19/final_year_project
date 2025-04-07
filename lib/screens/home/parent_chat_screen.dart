@@ -27,8 +27,9 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
+  String? linkedUserId;
   String? chatId;
-  // List<Map<String, dynamic>> messages = [];
+  List<Map<String, dynamic>> messages = [];
 
   final Color primaryColor = Color(0xFF3EAAA5); // Teal
   final Color secondaryColor = Color(0xFFBC4781); // Pink
@@ -39,10 +40,13 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
   @override
   void initState() {
     super.initState();
-    _createChatId();
+    // _fetchLinkedUser();
+    _listenForIncomingCalls();
+    _initializeChat();
+    linkedUserId = widget.parentId;
   }
 
-   void _createChatId() {
+  void _initializeChat() {
     // Consistent chat ID generation using child and parent IDs
     List<String> sortedIds = [widget.childId, widget.parentId]..sort();
     chatId = '${sortedIds[0]}_${sortedIds[1]}';
@@ -52,8 +56,11 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
   void _sendMessage() async {
     if (_messageController.text.isEmpty || chatId == null) return;
 
-    String currentUserId = _auth.currentUser !.uid;
+    String currentUserId = _auth.currentUser!.uid;
     String receiverId = widget.childId;
+    print("📩 Sending Message from Parent to:");
+    print("Sender ID: $currentUserId");
+    print("Receiver ID: $receiverId");
 
     await FirebaseFirestore.instance
         .collection('chats')
@@ -61,7 +68,7 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
         .collection('messages')
         .add({
       'senderId': currentUserId,
-      'receiverId': receiverId,
+      'receiverId': receiverId, // Child should receive the message
       'text': _messageController.text.trim(),
       'timestamp': FieldValue.serverTimestamp(),
     });
@@ -73,7 +80,7 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
       curve: Curves.easeOut,
     );
   }
-
+  
   void _listenForIncomingCalls() {
     String currentUserId = _auth.currentUser!.uid;
 
@@ -133,6 +140,19 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
         .collection('video_calls')
         .doc(callId)
         .update({'status': 'rejected'});
+  }
+
+  void _initiateVideoCall() async {
+    if (linkedUserId == null || chatId == null) return;
+
+    String currentUserId = _auth.currentUser!.uid;
+
+    await FirebaseFirestore.instance.collection('video_calls').add({
+      'callerId': currentUserId,
+      'receiverId': linkedUserId,
+      'status': 'incoming',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   @override
@@ -213,7 +233,7 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
               ),
               child: Icon(Icons.video_call, color: primaryColor),
             ),
-            onPressed: (){},
+            onPressed: _initiateVideoCall,
           ),
           SizedBox(width: 8),
         ],
@@ -331,8 +351,6 @@ class _ParentChatScreenState extends State<ParentChatScreen> {
       },
     );
   }
-
-
 
   Widget _buildMessageInput() {
     return Container(

@@ -60,6 +60,8 @@ class AppRoutes {
   static const String communityGuidelines = '/communityGuidelines-screen';
   static const String checkin = '/check-in-screen';
   static const String selectParent = '/selectParent-sceen';
+  // static const String voice = '/voice-detect';
+
   
 
 
@@ -94,6 +96,7 @@ class AppRoutes {
       communityGuidelines: (context) => CommunityGuidelinesScreen(),
       checkin: (context) => CheckInScreen(userId: '',),
       selectParent: (context) => SelectParentScreen(),
+      // voice: (context) => VoiceDetectionScreen(),
     };
   }
 }

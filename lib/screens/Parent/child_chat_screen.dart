@@ -47,15 +47,17 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
 void _sendMessage() async {
     if (_messageController.text.isEmpty || chatId == null) return;
 
-    String currentUserId = _auth.currentUser !.uid;
+    String currentUserId = _auth.currentUser!.uid;
+    print("📩 Sending Message - Sender: $currentUserId, Receiver (Child): ${widget.childId}");
+
 
     await FirebaseFirestore.instance
         .collection('chats')
         .doc(chatId)
         .collection('messages')
         .add({
-      'senderId': currentUserId,
-      'receiverId': widget.parentId,
+      'senderId': currentUserId,   // The Parent sends the message
+      'receiverId': widget.childId, // Child is the receiver
       'text': _messageController.text.trim(),
       'timestamp': FieldValue.serverTimestamp(),
     });
@@ -67,7 +69,7 @@ void _sendMessage() async {
       curve: Curves.easeOut,
     );
   }
-  
+
   void _showVideoCallPopup() {
     showDialog(
       context: context,
@@ -196,7 +198,7 @@ void _sendMessage() async {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('chats')
-          .doc(chatId)
+          .doc(chatId) // ✅ Ensure correct chat ID
           .collection('messages')
           .orderBy('timestamp', descending: true)
           .snapshots(),
@@ -206,11 +208,12 @@ void _sendMessage() async {
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          print("⚠️ No messages found for chatId: $chatId");
           return Center(child: Text("No messages found."));
         }
 
         var messages = snapshot.data!.docs;
-        
+
         return ListView.builder(
           reverse: true,
           controller: _scrollController,
@@ -273,9 +276,6 @@ void _sendMessage() async {
       },
     );
   }
-
-
-
 
   Widget _buildMessageInput() {
     return Container(

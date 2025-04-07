@@ -205,6 +205,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     subtitle: 'Manage your auto-checkins',
                     onTap: () => Navigator.pushNamed(context, AppRoutes.checkin),
                   ),
+                  // _buildSettingsTile(
+                  //   icon: Icons.check_circle_outline,
+                  //   title: 'Voice detect',
+                  //   subtitle: 'Manage your Voice',
+                  //   onTap: () => Navigator.pushNamed(context, AppRoutes.voice),
+                  // ),
                   _buildSettingsTile(
                     icon: Icons.refresh,
                     title: 'Reset App',

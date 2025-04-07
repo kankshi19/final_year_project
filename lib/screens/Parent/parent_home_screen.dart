@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -172,10 +173,17 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
       print("ERROR: Child ID or Name is null when opening chat!");
       return; // Prevent navigation if data is missing
     }
+
+    String parentId = FirebaseAuth.instance.currentUser?.uid ?? ''; // Get the logged-in parent's ID
+
+    if (parentId.isEmpty) {
+      print("ERROR: Parent ID is null or empty!");
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChildChatScreen(childId: selectedChildId!, childName: selectedChildName!, parentId: '',),
+        builder: (context) => ChildChatScreen(childId: selectedChildId!, childName: selectedChildName!, parentId: parentId,),
       ),
     );
   }

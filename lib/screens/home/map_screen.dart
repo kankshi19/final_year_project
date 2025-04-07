@@ -42,52 +42,132 @@ class _MapScreenState extends State<MapScreen> {
   StreamSubscription<String>? _connectionSubscription;
 
   void _startCountdown(BuildContext context) {
-    _countdown = 10;
+  _countdown = 5; 
 
-    // Start the countdown timer
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (_countdown > 0) {
-        setState(() {
-          _countdown--;
-        });
-      } else {
-        _triggerSOS();
-        timer.cancel();
-      }
-    });
+  // Show the enhanced confirmation dialog first
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevents dismissing by tapping outside
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          // Start the countdown timer after building the dialog
+          // This ensures the timer updates the UI using setDialogState
+          if (_timer == null || !_timer!.isActive) {
+            _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+              setDialogState(() {
+                if (_countdown > 0) {
+                  _countdown--;
+                } else {
+                  _triggerSOS();
+                  timer.cancel();
+                  Navigator.of(context).pop(); // Close dialog after triggering SOS
+                }
+              });
+            });
+          }
 
-    // Show the confirmation dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevents dismissing by tapping outside
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text("Emergency SOS!"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("Sending emergency SOS in $_countdown seconds..."),
-                  SizedBox(height: 10),
-                  CircularProgressIndicator(),
-                ],
-              ),
-              actions: [
-                TextButton(
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: Colors.red.shade50,
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_rounded,
+                  color: Colors.red,
+                  size: 28,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  "EMERGENCY SOS",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Your emergency contacts will be notified",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.red, width: 4),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "$_countdown",
+                      style: TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                LinearProgressIndicator(
+                  value: _countdown / 5, // Progress based on countdown
+                  backgroundColor: Colors.red.shade100,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Sending SOS in $_countdown ${_countdown == 1 ? 'second' : 'seconds'}...",
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              Container(
+                width: double.infinity,
+                child: ElevatedButton(
                   onPressed: () {
                     _timer?.cancel();
                     Navigator.pop(context); // Close dialog
                   },
-                  child: Text("I'm OK, Cancel SOS"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.red,
+                    side: BorderSide(color: Colors.red),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    "I'M SAFE - CANCEL SOS",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+              ),
+            ],
+            actionsPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          );
+        },
+      );
+    },
+  );
+}
 
   void _triggerSOS() {
     Navigator.pop(context); // Close the dialog
@@ -176,12 +256,33 @@ void _checkBleConnection() async {
       if (_currentLocation != null) {
         double lat = _currentLocation!.latitude!;
         double lon = _currentLocation!.longitude!;
+
+        // Store location in Firebase
+        _updateLocationInFirebase(lat, lon);
+
         await _fetchSafetyData(lat, lon);
       }
     } catch (e) {
       print("Error getting location: $e");
     }
   }
+
+  void _updateLocationInFirebase(double latitude, double longitude) {
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      DatabaseReference ref = FirebaseDatabase.instance.ref("users/$userId/location");
+      ref.set({
+        "latitude": latitude,
+        "longitude": longitude,
+        "timestamp": DateTime.now().millisecondsSinceEpoch,
+      }).then((_) {
+        print("✅ Location updated in Firebase!");
+      }).catchError((error) {
+        print("❌ Failed to update location: $error");
+      });
+    }
+  }
+
 
   Future<int> _fetchNeighborhood(double lat, double lon) async {
     final String baseUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
@@ -205,7 +306,7 @@ Future<void> _fetchSafetyData(double lat, double lon) async {
   final Uri url = Uri.parse("https://helishah12-miracle-space.hf.space/predict/");
 
   int neighborhood = await _fetchNeighborhood(lat, lon);
-  double crimeTime = DateTime.now().hour >= 20 ? 1 : 0;
+  double crimeTime = DateTime.now().hour >= 18 ? 1 : 0;
 
   Map<String, dynamic> requestBody = {
     "latitude": lat,
@@ -366,6 +467,22 @@ Future<void> _fetchSafetyData(double lat, double lon) async {
       ),
     ];
   }
+
+
+  void updateUserLocation(String userId, double lat, double lon) {
+    DatabaseReference ref = FirebaseDatabase.instance.ref("users/$userId/location");
+
+    ref.set({
+      "latitude": lat,
+      "longitude": lon,
+      "timestamp": ServerValue.timestamp
+    }).then((_) {
+      print("Location updated successfully!");
+    }).catchError((error) {
+      print("Failed to update location: $error");
+    });
+  }
+
 
 
 

@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/voice_detection_service.dart';
 import '../../utils/constants.dart';
 
 
@@ -30,7 +31,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProv
   late AnimationController _sosAnimationController;
   bool _isLoading = true;
 
-  int _countdown = 10;
+  int _countdown = 5;
   Timer? _timer;
   final BleService _bleService = BleService();
   bool _isSending = false;
@@ -38,55 +39,137 @@ class _EmergencyScreenState extends State<EmergencyScreen> with SingleTickerProv
   bool _isWearableConnected = false;
 
   StreamSubscription<String>? _connectionSubscription;
+   late BackgroundVoiceDetectionService _voiceDetectionService;
+  StreamSubscription<void>? _sosTriggerSubscription;
 
-  void _startCountdown(BuildContext context) {
-    _countdown = 10;
 
-    // Start the countdown timer
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (_countdown > 0) {
-        setState(() {
-          _countdown--;
-        });
-      } else {
-        _triggerSOS();
-        timer.cancel();
-      }
-    });
+void _startCountdown(BuildContext context) {
+  _countdown = 5; 
 
-    // Show the confirmation dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevents dismissing by tapping outside
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text("Emergency SOS!"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("Sending emergency SOS in $_countdown seconds..."),
-                  SizedBox(height: 10),
-                  CircularProgressIndicator(),
-                ],
-              ),
-              actions: [
-                TextButton(
+  // Show the enhanced confirmation dialog first
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevents dismissing by tapping outside
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          // Start the countdown timer after building the dialog
+          // This ensures the timer updates the UI using setDialogState
+          if (_timer == null || !_timer!.isActive) {
+            _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+              setDialogState(() {
+                if (_countdown > 0) {
+                  _countdown--;
+                } else {
+                  _triggerSOS();
+                  timer.cancel();
+                  Navigator.of(context).pop(); // Close dialog after triggering SOS
+                }
+              });
+            });
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: Colors.red.shade50,
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_rounded,
+                  color: Colors.red,
+                  size: 28,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  "EMERGENCY SOS",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Your emergency contacts will be notified",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.red, width: 4),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "$_countdown",
+                      style: TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                LinearProgressIndicator(
+                  value: _countdown / 5, // Progress based on countdown
+                  backgroundColor: Colors.red.shade100,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Sending SOS in $_countdown ${_countdown == 1 ? 'second' : 'seconds'}...",
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              Container(
+                width: double.infinity,
+                child: ElevatedButton(
                   onPressed: () {
                     _timer?.cancel();
                     Navigator.pop(context); // Close dialog
                   },
-                  child: Text("I'm OK, Cancel SOS"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.red,
+                    side: BorderSide(color: Colors.red),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    "I'M SAFE - CANCEL SOS",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
+              ),
+            ],
+            actionsPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+          );
+        },
+      );
+    },
+  );
+}
   void _triggerSOS() {
     Navigator.pop(context); // Close the dialog
     
@@ -165,6 +248,15 @@ void _checkBleConnection() async {
         _isWearableConnected = status == "Connected";
       });
     });
+
+    _voiceDetectionService = BackgroundVoiceDetectionService();
+    _voiceDetectionService.initialize();
+    _voiceDetectionService.startListening();
+
+    // Listen to the SOS trigger stream
+    _sosTriggerSubscription = _voiceDetectionService.sosTriggerStream.listen((_) {
+      _startCountdown(context); // Call the SOS countdown method
+    });
     
     _initializeData();
   }
@@ -181,6 +273,8 @@ void _checkBleConnection() async {
   void dispose() {
     _sosAnimationController.dispose();
      _connectionSubscription?.cancel();
+     _sosTriggerSubscription?.cancel(); // Cancel the subscription
+    _voiceDetectionService.dispose();
     super.dispose();
   }
 

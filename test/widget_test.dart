@@ -8,11 +8,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:safety_app/main.dart';
+import 'package:safety_app/services/sos_manager.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(SafetyCompanionApp(isDarkMode: true,isFirstTime: false,));
+    await tester.pumpWidget(SafetyCompanionApp(isDarkMode: true,isFirstTime: false, sosManager: SOSManager(),));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
